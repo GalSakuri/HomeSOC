@@ -1,0 +1,54 @@
+rules:
+  - id: "macos-suspicious-shell-spawn"
+    name: "Suspicious Shell Spawned by Non-Terminal Process"
+    description: "Shell (bash/zsh/sh) spawned from a non-terminal parent process"
+    severity: "high"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "process"
+      event_type: "process_exec"
+      match_any:
+        process_name: ["bash", "zsh", "sh"]
+      not_match_prefix:
+        process_path:
+          - "/Applications/iTerm.app/"
+          - "/System/Applications/Utilities/Terminal.app/"
+          - "/Applications/Visual Studio Code.app/"
+          - "/Applications/Alacritty.app/"
+
+  - id: "macos-exec-from-tmp"
+    name: "Process Executing from Temporary Directory"
+    description: "Binary executed from /tmp, /var/tmp, or Downloads"
+    severity: "medium"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "process"
+      event_type: "process_exec"
+      match_any_prefix:
+        process_path: ["/tmp/", "/var/tmp/", "/Users/*/Downloads/"]
+
+  - id: "macos-suspicious-tool"
+    name: "Suspicious Reconnaissance Tool Executed"
+    description: "Network scanning or data exfiltration tool detected"
+    severity: "high"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "process"
+      event_type: "process_exec"
+      match_any:
+        process_name: ["nmap", "nc", "netcat", "ncat", "socat", "tcpdump"]
+
+  - id: "macos-launch-daemon-created"
+    name: "New LaunchDaemon or LaunchAgent Registered"
+    description: "File created in LaunchDaemons/LaunchAgents — potential persistence mechanism"
+    severity: "high"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "file"
+      event_type: "file_create"
+      match_any_contains:
+        file_path: ["LaunchDaemons", "LaunchAgents"]

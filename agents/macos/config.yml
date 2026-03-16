@@ -1,0 +1,38 @@
+# HomeSOC macOS Agent Configuration
+
+backend:
+  url: "http://localhost:8443"
+
+agent:
+  id: null  # Auto-generated from hostname if null
+
+collectors:
+  eslogger:
+    enabled: true
+    event_types:
+      - exec
+      - create
+      - rename
+      - authentication
+    filtered_process_names:
+      - mdworker_shared
+      - mds_stores
+      - mds
+      - fseventsd
+      - distnoted
+      - cfprefsd
+      - launchservicesd
+    filtered_path_prefixes:
+      - /usr/libexec/
+      - /private/var/folders/
+      - /System/Library/PrivateFrameworks/
+      - /Library/Apple/System/
+
+  network:
+    enabled: true
+    poll_interval: 15  # seconds
+
+transport:
+  batch_size: 100
+  flush_interval: 5  # seconds
+  max_buffer: 100000

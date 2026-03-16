@@ -1,0 +1,40 @@
+rules:
+  - id: "macos-unusual-outbound"
+    name: "Outbound Connection on Uncommon Port"
+    description: "Process connecting to external IP on non-standard port"
+    severity: "medium"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "network"
+      event_type: "network_connection"
+      not_match:
+        dst_port: [80, 443, 53, 22, 993, 587, 5353, 8080, 8443]
+      not_match_prefix:
+        dst_ip: ["192.168.", "10.", "172.16.", "127.", "::1"]
+
+  - id: "macos-known-c2-port"
+    name: "Connection to Known C2 Port"
+    description: "Outbound connection to port commonly used by C2 frameworks"
+    severity: "critical"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "network"
+      event_type: "network_connection"
+      match_any:
+        dst_port: [4444, 1337, 6667, 5555, 9001, 8888, 31337]
+
+  - id: "macos-brute-force-auth"
+    name: "Multiple Failed Authentication Attempts"
+    description: "More than 5 failed auth attempts within 60 seconds"
+    severity: "critical"
+    platform: "macos"
+    type: "threshold"
+    conditions:
+      category: "auth"
+      event_type: "auth_attempt"
+      match:
+        auth_success: false
+    window_seconds: 60
+    threshold: 5

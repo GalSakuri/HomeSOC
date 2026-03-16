@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --soc-bg: 10 14 26;
+    --soc-surface: 17 24 39;
+    --soc-card: 26 34 54;
+    --soc-border: 30 42 58;
+    --soc-accent: 59 130 246;
+    --soc-success: 16 185 129;
+    --soc-warning: 245 158 11;
+    --soc-danger: 239 68 68;
+    --soc-critical: 220 38 38;
+    --soc-text: 229 231 235;
+    --soc-muted: 107 114 128;
+  }
+
+  body {
+    @apply antialiased bg-soc-bg text-soc-text transition-colors duration-200;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-soc-bg;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-soc-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-soc-muted;
+  }
+}
