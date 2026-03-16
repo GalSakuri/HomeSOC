@@ -2,16 +2,17 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from shared.protocol import BatchResponse, EventBatch
 
 from ..db import repository
+from .auth import require_api_key
 
 router = APIRouter(prefix="/api/v1", tags=["events"])
 
 
-@router.post("/events", response_model=BatchResponse)
+@router.post("/events", response_model=BatchResponse, dependencies=[Depends(require_api_key)])
 async def ingest_events(batch: EventBatch, request: Request) -> BatchResponse:
     events_dicts = []
     for ev in batch.events:
@@ -53,7 +54,7 @@ async def get_event(event_id: str) -> dict:
     return event
 
 
-@router.delete("/events")
+@router.delete("/events", dependencies=[Depends(require_api_key)])
 async def clear_events() -> dict:
     count = await repository.clear_events()
     return {"cleared": count}

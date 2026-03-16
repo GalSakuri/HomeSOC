@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Any
@@ -26,18 +27,21 @@ class ConnectionManager:
             pass  # Already removed during broadcast cleanup
 
     async def broadcast(self, message: dict[str, Any]) -> None:
-        dead: list[WebSocket] = []
-        for ws in self._connections:
-            try:
-                await ws.send_text(json.dumps(message, default=str))
-            except Exception as e:
-                logger.debug("WebSocket send failed, removing connection: %s", e)
-                dead.append(ws)
-        for ws in dead:
-            try:
-                self._connections.remove(ws)
-            except ValueError:
-                pass
+        if not self._connections:
+            return
+        payload = json.dumps(message, default=str)
+        results = await asyncio.gather(
+            *(ws.send_text(payload) for ws in self._connections),
+            return_exceptions=True,
+        )
+        # Remove dead connections in one pass
+        alive: list[WebSocket] = []
+        for ws, result in zip(self._connections, results):
+            if isinstance(result, Exception):
+                logger.debug("WebSocket send failed, removing connection: %s", result)
+            else:
+                alive.append(ws)
+        self._connections = alive
 
     @property
     def active_count(self) -> int:

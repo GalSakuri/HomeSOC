@@ -238,7 +238,23 @@ class EsloggerCollector(BaseCollector):
         }
 
     def _extract_timestamp(self, raw: dict) -> str:
-        ts = raw.get("mach_time", {})
-        if isinstance(ts, (int, float)):
-            return datetime.now(timezone.utc).isoformat()
+        """Extract event timestamp from eslogger output.
+
+        eslogger provides `time` as a seconds+nanoseconds pair under the
+        `process` or top-level `time` key.  `mach_time` is a Mach absolute
+        time (ticks since boot) and cannot be converted to wall-clock time
+        without the timebase, so we use `time` when available and fall back
+        to now().
+        """
+        # eslogger JSON includes a UNIX-epoch "time" field on each event
+        time_field = raw.get("time")
+        if isinstance(time_field, (int, float)):
+            return datetime.fromtimestamp(time_field, tz=timezone.utc).isoformat()
+        # Some eslogger versions nest it as seconds + nanoseconds
+        if isinstance(time_field, dict):
+            secs = time_field.get("seconds", 0)
+            nsecs = time_field.get("nanoseconds", 0)
+            if secs:
+                ts = secs + nsecs / 1_000_000_000
+                return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
         return datetime.now(timezone.utc).isoformat()

@@ -17,6 +17,7 @@ class Transport:
         self,
         backend_url: str,
         agent_id: str,
+        api_key: str = "",
         batch_size: int = 100,
         flush_interval: float = 5.0,
         max_buffer: int = 100_000,
@@ -27,7 +28,8 @@ class Transport:
         self.flush_interval = flush_interval
         self.max_buffer = max_buffer
         self._buffer: deque[dict] = deque(maxlen=max_buffer)
-        self._client = httpx.AsyncClient(timeout=10.0)
+        headers = {"X-API-Key": api_key} if api_key else {}
+        self._client = httpx.AsyncClient(timeout=10.0, headers=headers)
 
     async def register(self, hostname: str, platform: str) -> None:
         try:

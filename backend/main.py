@@ -48,9 +48,13 @@ async def lifespan(app: FastAPI):
     # Start background stale-agent checker
     checker_task = asyncio.create_task(_stale_agent_checker())
 
+    api_key = settings.ensure_api_key()
     print(f"[HomeSOC] Backend started on {settings.host}:{settings.port}")
     print(f"[HomeSOC] Database: {settings.db_path}")
     print(f"[HomeSOC] Detection rules loaded: {len(engine.rules)}")
+    print(f"[HomeSOC] API Key: {api_key}")
+    print(f"[HomeSOC]   Set HOMESOC_API_KEY env var to use a fixed key")
+    print(f"[HomeSOC]   Agents must send X-API-Key header on all requests")
     yield
     # Shutdown
     checker_task.cancel()

@@ -19,8 +19,9 @@ class DetectionEngine:
         self.single_rules = [r for r in self.rules if r.get("type") == "single"]
         self.threshold_rules = [r for r in self.rules if r.get("type") == "threshold"]
 
-        # Threshold state: rule_id -> list of timestamps
-        self._threshold_windows: dict[str, list[float]] = defaultdict(list)
+        # Threshold state: (rule_id, group_key) -> list of timestamps
+        # group_key is derived from the event to scope counting per-source
+        self._threshold_windows: dict[tuple[str, str], list[float]] = defaultdict(list)
 
     def evaluate(self, event: dict) -> list[dict]:
         """Evaluate an event against all rules. Returns list of alert dicts."""
@@ -95,6 +96,25 @@ class DetectionEngine:
 
         return True
 
+    @staticmethod
+    def _threshold_group_key(rule: dict, event: dict) -> str:
+        """Build a grouping key so threshold counting is per-source, not global.
+
+        Groups by agent_id + the most relevant identity field for the rule's
+        category (e.g., auth_user for auth rules, src_ip for network rules).
+        """
+        parts = [event.get("agent_id", "")]
+        category = rule.get("conditions", {}).get("category", "")
+        if category == "auth":
+            parts.append(event.get("auth_user") or "")
+        elif category == "network":
+            parts.append(event.get("src_ip") or "")
+        elif category == "process":
+            parts.append(event.get("process_user") or "")
+        else:
+            parts.append(event.get("agent_id") or "")
+        return "|".join(parts)
+
     def _check_threshold(self, rule: dict, event: dict) -> dict | None:
         """Check if event triggers a threshold rule."""
         rule_id = rule["id"]
@@ -103,22 +123,24 @@ class DetectionEngine:
         if not self._match_single(rule, event):
             return None
 
-        # Event matches — record timestamp
+        # Event matches — record timestamp scoped to source
         now = datetime.now(timezone.utc).timestamp()
         window = rule.get("window_seconds", 60)
         threshold = rule.get("threshold", 5)
+        group_key = self._threshold_group_key(rule, event)
+        bucket_key = (rule_id, group_key)
 
-        self._threshold_windows[rule_id].append(now)
-
-        # Prune old entries outside the window
+        # Prune old entries FIRST to avoid unbounded growth
         cutoff = now - window
-        self._threshold_windows[rule_id] = [
-            ts for ts in self._threshold_windows[rule_id] if ts > cutoff
+        self._threshold_windows[bucket_key] = [
+            ts for ts in self._threshold_windows[bucket_key] if ts > cutoff
         ]
 
-        if len(self._threshold_windows[rule_id]) >= threshold:
-            # Threshold exceeded — fire alert and reset
-            self._threshold_windows[rule_id].clear()
+        self._threshold_windows[bucket_key].append(now)
+
+        if len(self._threshold_windows[bucket_key]) >= threshold:
+            # Threshold exceeded — fire alert and reset this bucket
+            self._threshold_windows[bucket_key].clear()
             return self._create_alert(rule, event)
 
         return None

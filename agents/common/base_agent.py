@@ -35,12 +35,14 @@ class BaseAgent(abc.ABC):
         backend_url: str,
         agent_id: str | None = None,
         platform_name: str = "unknown",
+        api_key: str = "",
     ) -> None:
         self.agent_id = agent_id or f"{socket.gethostname()}-{uuid.uuid4().hex[:8]}"
         self.hostname = socket.gethostname()
         self.platform_name = platform_name
-        self.transport = Transport(backend_url, self.agent_id)
+        self.transport = Transport(backend_url, self.agent_id, api_key=api_key)
         self.collectors: list[BaseCollector] = []
+        self._tasks: list[asyncio.Task] = []
         self._running = False
         self._start_time = datetime.now(timezone.utc)
 
@@ -65,18 +67,18 @@ class BaseAgent(abc.ABC):
 
         # Start collectors
         self.collectors = self.setup_collectors()
-        tasks = []
+        self._tasks = []
         for collector in self.collectors:
-            tasks.append(asyncio.create_task(collector.start(self._on_event)))
+            self._tasks.append(asyncio.create_task(collector.start(self._on_event)))
 
         # Start flush loop and heartbeat loop
-        tasks.append(asyncio.create_task(self.transport.flush_loop()))
-        tasks.append(asyncio.create_task(self._heartbeat_loop()))
+        self._tasks.append(asyncio.create_task(self.transport.flush_loop()))
+        self._tasks.append(asyncio.create_task(self._heartbeat_loop()))
 
         print(f"[Agent:{self.agent_id}] Started with {len(self.collectors)} collectors")
 
         try:
-            await asyncio.gather(*tasks)
+            await asyncio.gather(*self._tasks)
         except asyncio.CancelledError:
             pass
 
@@ -99,5 +101,12 @@ class BaseAgent(abc.ABC):
         self._running = False
         for collector in self.collectors:
             await collector.stop()
+        # Cancel all running tasks (flush_loop, heartbeat, collectors)
+        for task in self._tasks:
+            if not task.done():
+                task.cancel()
+        # Wait for tasks to finish cancellation before closing transport
+        await asyncio.gather(*self._tasks, return_exceptions=True)
         await self.transport.close()
+        self._tasks.clear()
         print(f"[Agent:{self.agent_id}] Stopped")

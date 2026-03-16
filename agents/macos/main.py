@@ -1,7 +1,7 @@
 """macOS agent entry point.
 
 Usage:
-    sudo python main.py [--backend-url URL] [--agent-id ID]
+    sudo python main.py [--backend-url URL] [--agent-id ID] [--api-key KEY]
 
 Requires sudo for eslogger access and Full Disk Access TCC authorization.
 """
@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import signal
 import sys
 from pathlib import Path
@@ -31,6 +32,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Agent identifier (default: auto-generated from hostname)",
     )
+    parser.add_argument(
+        "--api-key",
+        default=os.environ.get("HOMESOC_API_KEY", ""),
+        help="Backend API key (default: HOMESOC_API_KEY env var)",
+    )
     return parser.parse_args()
 
 
@@ -39,6 +45,7 @@ async def main() -> None:
     agent = MacOSAgent(
         backend_url=args.backend_url,
         agent_id=args.agent_id,
+        api_key=args.api_key,
     )
 
     loop = asyncio.get_event_loop()

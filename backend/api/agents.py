@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from shared.protocol import AgentRegistration, HeartbeatPayload
 
 from ..db import repository
+from .auth import require_api_key
 from .ws import manager
 
 router = APIRouter(prefix="/api/v1", tags=["agents"])
@@ -17,7 +18,7 @@ router = APIRouter(prefix="/api/v1", tags=["agents"])
 _pending_shutdown: set[str] = set()
 
 
-@router.post("/register")
+@router.post("/register", dependencies=[Depends(require_api_key)])
 async def register_agent(reg: AgentRegistration) -> dict:
     # Check if agent is currently stopped — don't override that status
     existing = await repository.get_agent_by_id(reg.agent_id)
@@ -49,7 +50,7 @@ async def register_agent(reg: AgentRegistration) -> dict:
     return {"status": "registered", "agent_id": reg.agent_id}
 
 
-@router.post("/heartbeat")
+@router.post("/heartbeat", dependencies=[Depends(require_api_key)])
 async def heartbeat(hb: HeartbeatPayload) -> dict:
     # Check current status before overwriting
     existing = await repository.get_agent_by_id(hb.agent_id)
@@ -73,7 +74,7 @@ async def heartbeat(hb: HeartbeatPayload) -> dict:
     return {"status": "ok"}
 
 
-@router.post("/deregister")
+@router.post("/deregister", dependencies=[Depends(require_api_key)])
 async def deregister_agent(body: dict) -> dict:
     """Called by agents on graceful shutdown to mark themselves offline."""
     agent_id = body.get("agent_id")
@@ -92,7 +93,7 @@ async def list_agents() -> list[dict]:
     return await repository.get_agents()
 
 
-@router.delete("/agents/{agent_id}")
+@router.delete("/agents/{agent_id}", dependencies=[Depends(require_api_key)])
 async def delete_agent(agent_id: str) -> dict:
     deleted = await repository.delete_agent(agent_id)
     if not deleted:
@@ -102,7 +103,7 @@ async def delete_agent(agent_id: str) -> dict:
     return {"deleted": agent_id}
 
 
-@router.post("/agents/{agent_id}/stop")
+@router.post("/agents/{agent_id}/stop", dependencies=[Depends(require_api_key)])
 async def stop_agent(agent_id: str) -> dict:
     """Request an agent to shut down gracefully."""
     updated = await repository.update_agent_status(agent_id, "stopped")

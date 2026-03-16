@@ -23,6 +23,7 @@ A real-time dashboard gives you full visibility into what's happening across you
 - **Detection engine** with YAML-based rules (single-event and threshold-based)
 - **macOS agent** powered by Apple's Endpoint Security framework (`eslogger`)
 - **Interactive dashboard** with timeline charts, alert panels, and agent management
+- **API key authentication** on all write/destructive endpoints
 - **Zero cloud dependencies** — everything runs locally on your network
 - **SQLite with WAL mode** for fast concurrent reads/writes
 
@@ -104,10 +105,24 @@ pip3 install -r requirements.txt
 
 ```bash
 cd backend
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8443 --reload
+python3 -m uvicorn main:app --host 127.0.0.1 --port 8443 --reload
 ```
 
-The backend will start on `http://localhost:8443`. You can view the API docs at `http://localhost:8443/docs`.
+The backend will start on `http://localhost:8443`. On first run it generates a random API key and prints it to the console:
+
+```
+[HomeSOC] API Key: <your-key-here>
+[HomeSOC]   Set HOMESOC_API_KEY env var to use a fixed key
+[HomeSOC]   Agents must send X-API-Key header on all requests
+```
+
+To use a fixed key across restarts, set the environment variable:
+
+```bash
+export HOMESOC_API_KEY="your-secret-key-here"
+```
+
+API docs are available at `http://localhost:8443/docs`.
 
 ### 3. Start the Dashboard
 
@@ -126,13 +141,15 @@ Open **http://localhost:5173** in your browser.
 
 ```bash
 cd agents/macos
-sudo python3 main.py
+sudo python3 main.py --api-key <your-api-key>
 ```
+
+The agent reads the key from `--api-key` or the `HOMESOC_API_KEY` environment variable.
 
 Optional flags:
 
 ```bash
-sudo python3 main.py --agent-id MyMacBook --backend-url http://192.168.1.100:8443
+sudo python3 main.py --agent-id MyMacBook --backend-url http://192.168.1.100:8443 --api-key <key>
 ```
 
 ### 5. Generate Test Events (Optional)
@@ -140,10 +157,10 @@ sudo python3 main.py --agent-id MyMacBook --backend-url http://192.168.1.100:844
 If you want to see the dashboard in action without running a real agent:
 
 ```bash
-python3 scripts/generate_test_events.py
+python3 scripts/generate_test_events.py --api-key <your-api-key>
 ```
 
-Options: `--url`, `--count`, `--interval`
+Options: `--url`, `--count`, `--interval`, `--api-key` (or set `HOMESOC_API_KEY`)
 
 ---
 
@@ -215,36 +232,39 @@ The backend is configured via environment variables with the `HOMESOC_` prefix:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `HOMESOC_HOST` | `0.0.0.0` | Bind address |
+| `HOMESOC_HOST` | `127.0.0.1` | Bind address |
 | `HOMESOC_PORT` | `8443` | Server port |
 | `HOMESOC_DB_PATH` | `backend/data/events.db` | SQLite database path |
 | `HOMESOC_RULES_DIR` | `backend/rules/` | Detection rules directory |
 | `HOMESOC_CORS_ORIGINS` | `localhost:5173,3000` | Allowed CORS origins |
 | `HOMESOC_EVENT_RETENTION_DAYS` | `7` | Event retention period |
+| `HOMESOC_API_KEY` | *(auto-generated)* | API key for agent and destructive endpoints |
 
 ---
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/v1/events` | Ingest event batch |
-| `GET` | `/api/v1/events` | Query events (filters: category, severity, agent_id) |
-| `GET` | `/api/v1/events/{id}` | Get single event |
-| `DELETE` | `/api/v1/events` | Clear all events |
-| `GET` | `/api/v1/alerts` | List alerts (filters: status, severity) |
-| `PATCH` | `/api/v1/alerts/{id}` | Update alert status |
-| `DELETE` | `/api/v1/alerts` | Clear all alerts |
-| `POST` | `/api/v1/register` | Register agent |
-| `POST` | `/api/v1/heartbeat` | Agent heartbeat |
-| `GET` | `/api/v1/agents` | List agents |
-| `POST` | `/api/v1/agents/{id}/stop` | Stop agent remotely |
-| `POST` | `/api/v1/agents/{id}/resume` | Resume agent |
-| `DELETE` | `/api/v1/agents/{id}` | Remove agent |
-| `GET` | `/api/v1/rules` | List detection rules |
-| `GET` | `/api/v1/dashboard/summary` | Dashboard summary stats |
-| `WS` | `/ws/live` | Real-time event/alert stream |
-| `GET` | `/health` | Health check |
+Endpoints marked with **🔑** require the `X-API-Key` header.
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/v1/events` | 🔑 | Ingest event batch |
+| `GET` | `/api/v1/events` | | Query events (filters: category, severity, agent_id) |
+| `GET` | `/api/v1/events/{id}` | | Get single event |
+| `DELETE` | `/api/v1/events` | 🔑 | Clear all events |
+| `GET` | `/api/v1/alerts` | | List alerts (filters: status, severity) |
+| `PATCH` | `/api/v1/alerts/{id}` | | Update alert status |
+| `DELETE` | `/api/v1/alerts` | 🔑 | Clear all alerts |
+| `POST` | `/api/v1/register` | 🔑 | Register agent |
+| `POST` | `/api/v1/heartbeat` | 🔑 | Agent heartbeat |
+| `GET` | `/api/v1/agents` | | List agents |
+| `POST` | `/api/v1/agents/{id}/stop` | 🔑 | Stop agent remotely |
+| `POST` | `/api/v1/agents/{id}/resume` | | Resume agent |
+| `DELETE` | `/api/v1/agents/{id}` | 🔑 | Remove agent |
+| `GET` | `/api/v1/rules` | | List detection rules |
+| `GET` | `/api/v1/dashboard/summary` | | Dashboard summary stats |
+| `WS` | `/ws/live` | | Real-time event/alert stream |
+| `GET` | `/health` | | Health check |
 
 Full interactive docs available at `http://localhost:8443/docs` when the backend is running.
 
@@ -262,8 +282,32 @@ Full interactive docs available at `http://localhost:8443/docs` when the backend
 
 ---
 
+## Security
+
+HomeSOC enforces API key authentication on all endpoints that write data or control agents. Read-only endpoints (dashboard queries, event listings) are open so the frontend works without credentials.
+
+- The backend generates a random key on startup if `HOMESOC_API_KEY` is not set
+- Agents send the key via the `X-API-Key` HTTP header on every request
+- Key comparison uses constant-time `hmac.compare_digest` to prevent timing attacks
+- The default bind address is `127.0.0.1` — the API is not exposed to the network unless you explicitly change `HOMESOC_HOST`
+
+---
+
+## Testing
+
+```bash
+# From the project root
+pip install pytest pytest-asyncio
+PYTHONPATH=. python -m pytest tests/ -v
+```
+
+Tests cover: API key auth (accept/reject), insert_events non-mutation, per-source threshold detection, concurrent WebSocket broadcast, eslogger timestamp parsing, and detection rule completeness.
+
+---
+
 ## Roadmap
 
+- [x] API key authentication on agent/destructive endpoints
 - [ ] Windows agent (Event Log, Sysmon, WMI, netstat)
 - [ ] Linux agent (auditd, syslog)
 - [ ] Event retention enforcement (auto-cleanup)

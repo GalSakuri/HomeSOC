@@ -8,6 +8,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import os
 import random
 import time
 import uuid
@@ -16,6 +17,7 @@ from datetime import datetime, timezone
 import httpx
 
 BACKEND_URL = "http://localhost:8443"
+DEFAULT_API_KEY = os.environ.get("HOMESOC_API_KEY", "")
 AGENT_ID = "test-macbook-pro"
 
 PROCESS_NAMES = [
@@ -181,9 +183,11 @@ def main() -> None:
     parser.add_argument("--count", type=int, default=10, help="Events per batch")
     parser.add_argument("--batches", type=int, default=0, help="Number of batches (0=infinite)")
     parser.add_argument("--interval", type=float, default=2.0, help="Seconds between batches")
+    parser.add_argument("--api-key", default=DEFAULT_API_KEY, help="Backend API key (default: HOMESOC_API_KEY env var)")
     args = parser.parse_args()
 
-    client = httpx.Client(timeout=10.0)
+    headers = {"X-API-Key": args.api_key} if args.api_key else {}
+    client = httpx.Client(timeout=10.0, headers=headers)
 
     # Register test agent
     try:

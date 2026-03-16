@@ -12,35 +12,40 @@ from .connection import get_db
 # ── Events ──────────────────────────────────────────────────────────────
 
 
+_EVENT_COLS = [
+    "id", "timestamp", "received_at", "agent_id", "platform",
+    "category", "event_type", "severity", "process_name",
+    "process_pid", "process_ppid", "process_path", "process_user",
+    "process_args", "process_hash", "file_path", "file_action",
+    "src_ip", "src_port", "dst_ip", "dst_port", "protocol",
+    "dns_query", "auth_user", "auth_method", "auth_success",
+    "raw", "source", "source_event_id",
+]
+_EVENT_PLACEHOLDERS = ", ".join(["?"] * len(_EVENT_COLS))
+_EVENT_COL_NAMES = ", ".join(_EVENT_COLS)
+_EVENT_INSERT_SQL = f"INSERT OR IGNORE INTO events ({_EVENT_COL_NAMES}) VALUES ({_EVENT_PLACEHOLDERS})"
+
+
+def _serialize_for_db(ev: dict) -> list:
+    """Build a VALUES row from an event dict without mutating the original."""
+    values = []
+    for col in _EVENT_COLS:
+        val = ev.get(col)
+        if col == "process_args" and val is not None:
+            val = json.dumps(val)
+        elif col == "raw" and val is not None:
+            val = json.dumps(val)
+        elif col == "auth_success" and val is not None:
+            val = int(val)
+        values.append(val)
+    return values
+
+
 async def insert_events(events: list[dict]) -> int:
     db = await get_db()
     count = 0
     for ev in events:
-        # Serialize list/dict fields to JSON strings
-        if ev.get("process_args") is not None:
-            ev["process_args"] = json.dumps(ev["process_args"])
-        if ev.get("raw") is not None:
-            ev["raw"] = json.dumps(ev["raw"])
-        if ev.get("auth_success") is not None:
-            ev["auth_success"] = int(ev["auth_success"])
-
-        cols = [
-            "id", "timestamp", "received_at", "agent_id", "platform",
-            "category", "event_type", "severity", "process_name",
-            "process_pid", "process_ppid", "process_path", "process_user",
-            "process_args", "process_hash", "file_path", "file_action",
-            "src_ip", "src_port", "dst_ip", "dst_port", "protocol",
-            "dns_query", "auth_user", "auth_method", "auth_success",
-            "raw", "source", "source_event_id",
-        ]
-        values = [ev.get(c) for c in cols]
-        placeholders = ", ".join(["?"] * len(cols))
-        col_names = ", ".join(cols)
-
-        await db.execute(
-            f"INSERT OR IGNORE INTO events ({col_names}) VALUES ({placeholders})",
-            values,
-        )
+        await db.execute(_EVENT_INSERT_SQL, _serialize_for_db(ev))
         count += 1
     await db.commit()
     return count

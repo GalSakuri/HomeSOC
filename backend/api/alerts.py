@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from typing import Literal
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from ..db import repository
+from .auth import require_api_key
 
 router = APIRouter(prefix="/api/v1", tags=["alerts"])
 
@@ -38,7 +39,7 @@ async def update_alert(alert_id: str, body: AlertStatusUpdate) -> dict:
     return {"id": alert_id, "status": body.status}
 
 
-@router.delete("/alerts")
+@router.delete("/alerts", dependencies=[Depends(require_api_key)])
 async def clear_alerts() -> dict:
     count = await repository.clear_alerts()
     return {"cleared": count}
