@@ -33,65 +33,38 @@ A real-time dashboard gives you full visibility into what's happening on your ma
 
 ## Architecture
 
-```
-+-------------+     HTTP/JSON      +------------------+     WebSocket      +-------------+
-| macOS Agent | -----------------> | FastAPI Backend  | <----------------> | React        |
-| (eslogger,  |   POST /api/v1/   |                  |    /ws/live        | Dashboard    |
-|  lsof)      |     events        | +-------------+  |                    | (Vite +      |
-+-------------+                   | | Detection   |  |                    |  Tailwind)   |
-                                  | | Engine      |  |                    +-------------+
-                                  | +------+------+  |
-                                  |        |         |
-                                  | +------v------+  |
-                                  | | SQLite DB   |  |
-                                  | | (WAL mode)  |  |
-                                  | +-------------+  |
-                                  |        |         |
-                                  | +------v------+  |
-                                  | |   Redis     |  |
-                                  | | (optional)  |  |
-                                  | +------+------+  |
-                                  +--------|---------+
-                                           |
-                                  +--------v---------+
-                                  | Notifier Worker  |
-                                  | (alert delivery) |
-                                  +------------------+
+```mermaid
+flowchart LR
+    Agent["macOS Agent\neslogger + lsof"]
+    Backend["FastAPI Backend\nSQLite · Detection Engine"]
+    Dashboard["React Dashboard\nVite + Tailwind"]
+    Redis["Redis\n(optional)"]
+    Notifier["Notifier Worker\nalert delivery"]
+
+    Agent -->|"POST /api/v1/events\nHTTP/JSON batches"| Backend
+    Backend <-->|"WebSocket /ws/live\nreal-time stream"| Dashboard
+    Backend -->|"alert queue"| Redis
+    Redis --> Notifier
 ```
 
 ### Event Flow
 
-```
-  1. COLLECT             2. TRANSPORT            3. INGEST
-  +----------+           +----------+           +--------------+
-  | Agent    |  batch    | HTTP     |  POST     | Ingestion    |
-  | collects |---------> | transport|---------> | pipeline     |
-  | OS events|  buffer   | + retry  | /events   | (normalize)  |
-  +----------+           +----------+           +------+-------+
-                                                       |
-                              +------------------------+
-                              |                        |
-                    4. DETECT |              5. STORE  |
-                    +---------v---+          +---------v---+
-                    | Detection  |          | SQLite DB   |
-                    | engine     |          | (WAL mode)  |
-                    | (YAML      |          +-------------+
-                    | rules)     |
-                    +------+-----+
-                           | alert
-                    +------v------+
-                    | 6. ALERT   |
-                    |            |
-              +-----+-----+ +----+-----+
-              | WebSocket | | Redis   |
-              | broadcast | | queue   |
-              | (live)    | | (async) |
-              +-----+-----+ +----+----+
-                    |             |
-              +-----v------+ +---v--------+
-              | Dashboard  | | Notifier  |
-              | (browser)  | | worker    |
-              +------------+ +-----------+
+```mermaid
+flowchart LR
+    A["1. COLLECT\nAgent observes\nOS events"]
+    B["2. TRANSPORT\nHTTP batch\n+ retry"]
+    C["3. INGEST\nNormalize to\nNormalizedEvent"]
+    D["4. DETECT\nYAML rules\nengine"]
+    E["5. STORE\nSQLite DB\nWAL mode"]
+    F["6. ALERT\nWebSocket\nbroadcast"]
+    G["Redis queue\nasync notify"]
+
+    A -->|batch buffer| B
+    B -->|POST /events| C
+    C --> D
+    C --> E
+    D -->|match| F
+    D -->|match| G
 ```
 
 ---
