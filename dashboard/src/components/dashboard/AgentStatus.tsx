@@ -5,6 +5,8 @@ import { api } from "../../api/client";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { SetupInstructionsModal } from "./SetupInstructionsModal";
 
+const AGENT_POLL_INTERVAL_MS = 15_000;
+
 interface AgentStatusProps {
   showRemove?: boolean;
 }
@@ -140,7 +142,7 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
   const load = useCallback(async () => {
     try {
       const data = await api.getAgents();
-      setAgents(data as unknown as AgentInfo[]);
+      setAgents(data);
     } catch (e) {
       console.error("Failed to load agents:", e);
     }
@@ -148,7 +150,7 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 15000);
+    const interval = setInterval(load, AGENT_POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [load]);
 
@@ -184,10 +186,6 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
     } catch (e) {
       console.error("Failed to resume agent:", e);
     }
-  };
-
-  const platformIcon: Record<string, string> = {
-    macos: "",
   };
 
   const statusConfig: Record<string, { dot: string; text: string; label: string }> = {
@@ -245,9 +243,7 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
                 className="flex items-center justify-between p-3 bg-soc-bg/50 rounded-lg border border-soc-border"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">
-                    {platformIcon[agent.platform] || "💻"}
-                  </span>
+                  <span className="text-lg">💻</span>
                   <div>
                     <p className="text-sm text-soc-text font-medium">
                       {agent.hostname}

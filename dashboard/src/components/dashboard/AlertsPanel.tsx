@@ -2,6 +2,7 @@ import { AlertTriangle, CheckCircle } from "lucide-react";
 import { Alert, Severity } from "../../types/events";
 import { useSettings } from "../../contexts/SettingsContext";
 import { formatTime } from "../../utils/formatTime";
+import { severityBadge } from "../../utils/severity";
 
 interface AlertsPanelProps {
   alerts: Alert[];
@@ -14,14 +15,6 @@ const severityStyles: Record<Severity, string> = {
   medium: "border-l-soc-warning bg-soc-warning/5",
   low: "border-l-soc-accent bg-soc-accent/5",
   info: "border-l-soc-muted bg-soc-muted/5",
-};
-
-const severityBadge: Record<Severity, string> = {
-  critical: "bg-soc-critical/20 text-soc-critical",
-  high: "bg-soc-danger/20 text-soc-danger",
-  medium: "bg-soc-warning/20 text-soc-warning",
-  low: "bg-soc-accent/20 text-soc-accent",
-  info: "bg-soc-muted/20 text-soc-muted",
 };
 
 export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {

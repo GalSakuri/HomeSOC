@@ -86,13 +86,13 @@ async def lifespan(app: FastAPI):
     retention_task = asyncio.create_task(_retention_enforcer())
 
     api_key = settings.ensure_api_key()
-    print(f"[HomeSOC] Backend started on {settings.host}:{settings.port}")
-    print(f"[HomeSOC] Database: {settings.db_path}")
-    print(f"[HomeSOC] Detection rules loaded: {len(engine.rules)}")
-    print(f"[HomeSOC] Event retention: {settings.event_retention_days} day(s)")
-    print(f"[HomeSOC] API Key: {api_key}")
-    print(f"[HomeSOC]   Set HOMESOC_API_KEY env var to use a fixed key")
-    print(f"[HomeSOC]   Agents must send X-API-Key header on all requests")
+    logger.info("Backend started on %s:%d", settings.host, settings.port)
+    logger.info("Database: %s", settings.db_path)
+    logger.info("Detection rules loaded: %d", len(engine.rules))
+    logger.info("Event retention: %d day(s)", settings.event_retention_days)
+    logger.info("API Key: %s", api_key)
+    logger.info("  Set HOMESOC_API_KEY env var to use a fixed key")
+    logger.info("  Agents must send X-API-Key header on all requests")
     yield
     # Shutdown
     checker_task.cancel()
@@ -100,7 +100,7 @@ async def lifespan(app: FastAPI):
     if redis_client:
         await redis_client.aclose()
     await close_db()
-    print("[HomeSOC] Backend shut down")
+    logger.info("Backend shut down")
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):

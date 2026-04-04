@@ -11,6 +11,9 @@ import { SecurityEvent } from "../../types/events";
 import { useMemo } from "react";
 import { socVar } from "../../utils/themeColors";
 
+const TIMELINE_WINDOW_MS = 60 * 60 * 1000;
+const TIMELINE_BUCKETS = 60;
+
 interface EventTimelineProps {
   events: SecurityEvent[];
 }
@@ -25,18 +28,19 @@ export function EventTimeline({ events }: EventTimelineProps) {
       muted: socVar("muted"),
       card: socVar("card"),
     }),
+    // CSS variables are static; read once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
   const chartData = useMemo(() => {
     const now = Date.now();
-    const oneHourAgo = now - 60 * 60 * 1000;
+    const oneHourAgo = now - TIMELINE_WINDOW_MS;
 
     const buckets: { time: string; events: number; alerts: number }[] = [];
     const bucketMap = new Map<number, { events: number; alerts: number }>();
 
-    for (let i = 59; i >= 0; i--) {
+    for (let i = TIMELINE_BUCKETS - 1; i >= 0; i--) {
       const t = new Date(now - i * 60000);
       const minuteKey = Math.floor(t.getTime() / 60000);
       const label = `${t.getHours().toString().padStart(2, "0")}:${t.getMinutes().toString().padStart(2, "0")}`;
@@ -61,9 +65,11 @@ export function EventTimeline({ events }: EventTimelineProps) {
     }
 
     minuteKeys.forEach((key, i) => {
-      const data = bucketMap.get(key)!;
-      buckets[i].events = data.events;
-      buckets[i].alerts = data.alerts;
+      const data = bucketMap.get(key);
+      if (data) {
+        buckets[i].events = data.events;
+        buckets[i].alerts = data.alerts;
+      }
     });
 
     return buckets;

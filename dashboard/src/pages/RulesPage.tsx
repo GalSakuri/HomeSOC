@@ -1,28 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { Shield, ChevronDown, ChevronRight, FileText } from "lucide-react";
-import { Severity } from "../types/events";
-
-interface DetectionRule {
-  id: string;
-  name: string;
-  description: string;
-  severity: Severity;
-  platform: string | null;
-  type: string;
-  conditions: Record<string, unknown>;
-  window_seconds: number | null;
-  threshold: number | null;
-  source_file: string;
-}
-
-const severityBadge: Record<string, string> = {
-  critical: "bg-soc-critical/20 text-soc-critical",
-  high: "bg-soc-danger/20 text-soc-danger",
-  medium: "bg-soc-warning/20 text-soc-warning",
-  low: "bg-soc-accent/20 text-soc-accent",
-  info: "bg-soc-muted/20 text-soc-muted",
-};
+import { DetectionRule } from "../types/events";
+import { severityBadge } from "../utils/severity";
 
 const typeBadge: Record<string, string> = {
   single: "bg-soc-accent/10 text-soc-accent",
@@ -38,7 +18,7 @@ export function RulesPage() {
   useEffect(() => {
     api
       .getRules()
-      .then((data) => setRules(data as unknown as DetectionRule[]))
+      .then((data) => setRules(data))
       .catch((e) => console.error("Failed to load rules:", e))
       .finally(() => setLoading(false));
   }, []);

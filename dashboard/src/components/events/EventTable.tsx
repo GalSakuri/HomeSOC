@@ -1,7 +1,8 @@
-import { SecurityEvent, Severity } from "../../types/events";
-import { useState, useMemo } from "react";
+import { SecurityEvent } from "../../types/events";
+import { useState, useMemo, useCallback } from "react";
 import { useSettings } from "../../contexts/SettingsContext";
 import { formatDateTime } from "../../utils/formatTime";
+import { severityBadge } from "../../utils/severity";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 
 interface EventTableProps {
@@ -11,26 +12,18 @@ interface EventTableProps {
 
 type SortDir = "asc" | "desc" | null;
 
-const severityBadge: Record<Severity, string> = {
-  critical: "bg-soc-critical/20 text-soc-critical",
-  high: "bg-soc-danger/20 text-soc-danger",
-  medium: "bg-soc-warning/20 text-soc-warning",
-  low: "bg-soc-accent/20 text-soc-accent",
-  info: "bg-soc-muted/20 text-soc-muted",
-};
-
 export function EventTable({ events, loading }: EventTableProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const { settings } = useSettings();
 
-  const toggleSort = () => {
+  const toggleSort = useCallback(() => {
     setSortDir((prev) => {
       if (prev === null) return "desc";
       if (prev === "desc") return "asc";
       return null;
     });
-  };
+  }, []);
 
   const sortedEvents = useMemo(() => {
     if (!sortDir) return events;

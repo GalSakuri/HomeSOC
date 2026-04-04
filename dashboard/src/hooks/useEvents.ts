@@ -12,7 +12,7 @@ export function useEvents(params?: Record<string, string | number>) {
     setLoading(true);
     try {
       const data = await api.getEvents(params);
-      setEvents(data as unknown as SecurityEvent[]);
+      setEvents(data);
     } catch (e) {
       console.error("Failed to fetch events:", e);
     } finally {
@@ -35,7 +35,7 @@ export function useDashboardSummary() {
   const refresh = useCallback(async () => {
     try {
       const data = await api.getDashboardSummary();
-      setSummary(data as unknown as DashboardSummary);
+      setSummary(data);
     } catch (e) {
       console.error("Failed to fetch summary:", e);
     } finally {

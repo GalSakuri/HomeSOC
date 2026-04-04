@@ -7,12 +7,14 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from shared.enums import AlertStatus
+
 from ..db import repository
 from .auth import require_api_key
 
 router = APIRouter(prefix="/api/v1", tags=["alerts"])
 
-VALID_ALERT_STATUSES = ("open", "acknowledged", "resolved")
+VALID_ALERT_STATUSES = tuple(s.value for s in AlertStatus)
 
 
 class AlertStatusUpdate(BaseModel):

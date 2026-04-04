@@ -35,6 +35,7 @@ export function CategoryBreakdown({ summary }: CategoryBreakdownProps) {
       text: socVar("text"),
       muted: socVar("muted"),
     }),
+    // CSS variables are static; read once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );

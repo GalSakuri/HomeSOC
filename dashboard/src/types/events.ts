@@ -69,6 +69,19 @@ export interface DashboardSummary {
   rules_count: number;
 }
 
+export interface DetectionRule {
+  id: string;
+  name: string;
+  description: string;
+  severity: Severity;
+  platform: string | null;
+  type: string;
+  conditions: Record<string, unknown>;
+  window_seconds: number | null;
+  threshold: number | null;
+  source_file: string;
+}
+
 export interface WebSocketMessage {
   type: "event" | "alert" | "agent_status";
   data: SecurityEvent | Alert | AgentInfo;

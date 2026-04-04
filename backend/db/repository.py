@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import aiosqlite
+
+logger = logging.getLogger("homesoc.repository")
 
 from .connection import get_db
 
@@ -26,7 +30,7 @@ _EVENT_COL_NAMES = ", ".join(_EVENT_COLS)
 _EVENT_INSERT_SQL = f"INSERT OR IGNORE INTO events ({_EVENT_COL_NAMES}) VALUES ({_EVENT_PLACEHOLDERS})"
 
 
-def _serialize_for_db(ev: dict) -> list:
+def _serialize_for_db(ev: dict) -> list[Any]:
     """Build a VALUES row from an event dict without mutating the original."""
     values = []
     for col in _EVENT_COLS:
@@ -334,8 +338,8 @@ def _row_to_dict(row: aiosqlite.Row) -> dict:
         if field in d and isinstance(d[field], str):
             try:
                 d[field] = json.loads(d[field])
-            except (json.JSONDecodeError, TypeError):
-                pass
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning("Failed to deserialize JSON field '%s': %s", field, e)
     # Convert auth_success back to bool
     if "auth_success" in d and d["auth_success"] is not None:
         d["auth_success"] = bool(d["auth_success"])

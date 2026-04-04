@@ -1,20 +1,13 @@
 import { useEffect, useRef } from "react";
 import { Activity } from "lucide-react";
-import { SecurityEvent, Severity } from "../../types/events";
+import { SecurityEvent } from "../../types/events";
 import { useSettings } from "../../contexts/SettingsContext";
 import { formatTime } from "../../utils/formatTime";
+import { severityDot } from "../../utils/severity";
 
 interface LiveFeedProps {
   events: SecurityEvent[];
 }
-
-const severityDot: Record<Severity, string> = {
-  critical: "bg-soc-critical",
-  high: "bg-soc-danger",
-  medium: "bg-soc-warning",
-  low: "bg-soc-accent",
-  info: "bg-soc-muted",
-};
 
 const categoryLabel: Record<string, string> = {
   process: "PROC",

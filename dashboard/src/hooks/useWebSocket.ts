@@ -44,8 +44,8 @@ export function useWebSocketProvider(): WebSocketState {
           api.getEvents({ limit: 200 }),
           api.getAlerts({ limit: 50 }),
         ]);
-        setLiveEvents(events as unknown as SecurityEvent[]);
-        setLiveAlerts(alerts as unknown as Alert[]);
+        setLiveEvents(events);
+        setLiveAlerts(alerts);
       } catch (e) {
         console.error("Failed to load historical data:", e);
       }

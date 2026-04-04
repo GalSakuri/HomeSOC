@@ -2,34 +2,19 @@ import { useState } from "react";
 import { useEvents } from "../hooks/useEvents";
 import { EventTable } from "../components/events/EventTable";
 import { api } from "../api/client";
-import { useSettings } from "../contexts/SettingsContext";
+import { useClearData } from "../hooks/useClearData";
 import { RefreshCw, Trash2 } from "lucide-react";
 
 export function EventsPage() {
   const [category, setCategory] = useState("");
   const [severity, setSeverity] = useState("");
-  const [clearing, setClearing] = useState(false);
-  const { settings } = useSettings();
 
   const params: Record<string, string | number> = { limit: 200 };
   if (category) params.category = category;
   if (severity) params.severity = severity;
 
   const { events, loading, refresh } = useEvents(params);
-
-  const handleClear = async () => {
-    if (settings.confirmBeforeClear && !confirm("Clear all events? This cannot be undone.")) return;
-    setClearing(true);
-    try {
-      const result = await api.clearEvents();
-      console.log(`Cleared ${result.cleared} events`);
-      refresh();
-    } catch (e) {
-      console.error("Failed to clear events:", e);
-    } finally {
-      setClearing(false);
-    }
-  };
+  const { clearing, handleClear } = useClearData(api.clearEvents, refresh, "events");
 
   return (
     <div className="space-y-4">

@@ -1,28 +1,12 @@
-import { useState } from "react";
 import { useAlerts } from "../hooks/useAlerts";
 import { AlertsPanel } from "../components/dashboard/AlertsPanel";
 import { api } from "../api/client";
-import { useSettings } from "../contexts/SettingsContext";
+import { useClearData } from "../hooks/useClearData";
 import { RefreshCw, Trash2 } from "lucide-react";
 
 export function AlertsPage() {
   const { alerts, loading, refresh, updateStatus } = useAlerts();
-  const [clearing, setClearing] = useState(false);
-  const { settings } = useSettings();
-
-  const handleClear = async () => {
-    if (settings.confirmBeforeClear && !confirm("Clear all alerts? This cannot be undone.")) return;
-    setClearing(true);
-    try {
-      const result = await api.clearAlerts();
-      console.log(`Cleared ${result.cleared} alerts`);
-      refresh();
-    } catch (e) {
-      console.error("Failed to clear alerts:", e);
-    } finally {
-      setClearing(false);
-    }
-  };
+  const { clearing, handleClear } = useClearData(api.clearAlerts, refresh, "alerts");
 
   return (
     <div className="space-y-4">

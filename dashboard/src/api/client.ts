@@ -1,3 +1,5 @@
+import type { AgentInfo, Alert, DashboardSummary, DetectionRule, SecurityEvent } from "../types/events";
+
 const BASE_URL = "/api/v1";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -12,22 +14,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  getDashboardSummary: () => request<Record<string, unknown>>("/dashboard/summary"),
+  getDashboardSummary: () => request<DashboardSummary>("/dashboard/summary"),
 
   getEvents: (params?: Record<string, string | number>) => {
     const query = params ? "?" + new URLSearchParams(
       Object.entries(params).map(([k, v]) => [k, String(v)])
     ).toString() : "";
-    return request<Record<string, unknown>[]>(`/events${query}`);
+    return request<SecurityEvent[]>(`/events${query}`);
   },
 
-  getEvent: (id: string) => request<Record<string, unknown>>(`/events/${id}`),
+  getEvent: (id: string) => request<SecurityEvent>(`/events/${id}`),
 
   getAlerts: (params?: Record<string, string | number>) => {
     const query = params ? "?" + new URLSearchParams(
       Object.entries(params).map(([k, v]) => [k, String(v)])
     ).toString() : "";
-    return request<Record<string, unknown>[]>(`/alerts${query}`);
+    return request<Alert[]>(`/alerts${query}`);
   },
 
   updateAlert: (id: string, status: string) =>
@@ -36,7 +38,7 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
 
-  getAgents: () => request<Record<string, unknown>[]>("/agents"),
+  getAgents: () => request<AgentInfo[]>("/agents"),
 
   registerAgent: (agent: {
     agent_id: string;
@@ -59,7 +61,7 @@ export const api = {
       notes: string[];
     }>(`/setup/agent-instructions?agent_id=${encodeURIComponent(agentId)}&platform=${encodeURIComponent(platform)}`),
 
-  getRules: () => request<Record<string, unknown>[]>("/rules"),
+  getRules: () => request<DetectionRule[]>("/rules"),
 
   deleteAgent: (id: string) =>
     request<{ deleted: string }>(`/agents/${id}`, { method: "DELETE" }),

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from shared.protocol import AgentRegistration, HeartbeatPayload
 
@@ -18,41 +19,54 @@ router = APIRouter(prefix="/api/v1", tags=["agents"])
 _pending_shutdown: set[str] = set()
 
 
+class DeregisterRequest(BaseModel):
+    agent_id: str
+
+
+def _build_agent_dict(
+    agent_id: str,
+    hostname: str,
+    platform: str,
+    ip_address: str | None,
+    version: str,
+    status: str = "online",
+) -> dict:
+    return {
+        "id": agent_id,
+        "hostname": hostname,
+        "platform": platform,
+        "ip_address": ip_address,
+        "version": version,
+        "last_heartbeat": datetime.now(timezone.utc).isoformat(),
+        "status": status,
+    }
+
+
+async def _broadcast_agent_status(data: dict) -> None:
+    await manager.broadcast({"type": "agent_status", "data": data})
+
+
 @router.post("/register", dependencies=[Depends(require_api_key)])
 async def register_agent(reg: AgentRegistration) -> dict:
     # Check if agent is currently stopped — don't override that status
     existing = await repository.get_agent_by_id(reg.agent_id)
     if existing and existing.get("status") == "stopped":
-        # Update heartbeat/metadata but keep it stopped
-        agent = {
-            "id": reg.agent_id,
-            "hostname": reg.hostname,
-            "platform": reg.platform,
-            "ip_address": reg.ip_address,
-            "version": reg.version,
-            "last_heartbeat": datetime.now(timezone.utc).isoformat(),
-            "status": "stopped",
-        }
+        agent = _build_agent_dict(
+            reg.agent_id, reg.hostname, reg.platform, reg.ip_address, reg.version, "stopped"
+        )
         await repository.upsert_agent(agent)
         return {"status": "stopped", "agent_id": reg.agent_id, "command": "shutdown"}
 
-    agent = {
-        "id": reg.agent_id,
-        "hostname": reg.hostname,
-        "platform": reg.platform,
-        "ip_address": reg.ip_address,
-        "version": reg.version,
-        "last_heartbeat": datetime.now(timezone.utc).isoformat(),
-        "status": "online",
-    }
+    agent = _build_agent_dict(
+        reg.agent_id, reg.hostname, reg.platform, reg.ip_address, reg.version, "online"
+    )
     await repository.upsert_agent(agent)
-    await manager.broadcast({"type": "agent_status", "data": agent})
+    await _broadcast_agent_status(agent)
     return {"status": "registered", "agent_id": reg.agent_id}
 
 
 @router.post("/heartbeat", dependencies=[Depends(require_api_key)])
 async def heartbeat(hb: HeartbeatPayload) -> dict:
-    # Check current status before overwriting
     existing = await repository.get_agent_by_id(hb.agent_id)
 
     # If agent is stopped (either in DB or pending), tell it to shut down
@@ -61,31 +75,20 @@ async def heartbeat(hb: HeartbeatPayload) -> dict:
         await repository.update_agent_status(hb.agent_id, "stopped")
         return {"status": "ok", "command": "shutdown"}
 
-    agent = {
-        "id": hb.agent_id,
-        "hostname": hb.hostname,
-        "platform": hb.platform,
-        "ip_address": hb.ip_address,
-        "version": hb.version,
-        "last_heartbeat": datetime.now(timezone.utc).isoformat(),
-        "status": "online",
-    }
+    agent = _build_agent_dict(
+        hb.agent_id, hb.hostname, hb.platform, hb.ip_address, hb.version, "online"
+    )
     await repository.upsert_agent(agent)
     return {"status": "ok"}
 
 
 @router.post("/deregister", dependencies=[Depends(require_api_key)])
-async def deregister_agent(body: dict) -> dict:
+async def deregister_agent(body: DeregisterRequest) -> dict:
     """Called by agents on graceful shutdown to mark themselves offline."""
-    agent_id = body.get("agent_id")
-    if not agent_id:
-        raise HTTPException(status_code=400, detail="agent_id required")
-    updated = await repository.update_agent_status(agent_id, "offline")
+    updated = await repository.update_agent_status(body.agent_id, "offline")
     if updated:
-        await manager.broadcast(
-            {"type": "agent_status", "data": {"id": agent_id, "status": "offline"}}
-        )
-    return {"status": "offline", "agent_id": agent_id}
+        await _broadcast_agent_status({"id": body.agent_id, "status": "offline"})
+    return {"status": "offline", "agent_id": body.agent_id}
 
 
 @router.post("/agents")
@@ -94,17 +97,11 @@ async def create_agent(reg: AgentRegistration) -> dict:
     existing = await repository.get_agent_by_id(reg.agent_id)
     if existing:
         raise HTTPException(status_code=409, detail="Agent ID already exists")
-    agent = {
-        "id": reg.agent_id,
-        "hostname": reg.hostname,
-        "platform": reg.platform,
-        "ip_address": reg.ip_address,
-        "version": reg.version,
-        "last_heartbeat": datetime.now(timezone.utc).isoformat(),
-        "status": "offline",
-    }
+    agent = _build_agent_dict(
+        reg.agent_id, reg.hostname, reg.platform, reg.ip_address, reg.version, "offline"
+    )
     await repository.upsert_agent(agent)
-    await manager.broadcast({"type": "agent_status", "data": agent})
+    await _broadcast_agent_status(agent)
     return {"status": "registered", "agent_id": reg.agent_id}
 
 
@@ -119,7 +116,7 @@ async def delete_agent(agent_id: str) -> dict:
     if not deleted:
         raise HTTPException(status_code=404, detail="Agent not found")
     _pending_shutdown.discard(agent_id)
-    await manager.broadcast({"type": "agent_status", "data": {"id": agent_id, "status": "removed"}})
+    await _broadcast_agent_status({"id": agent_id, "status": "removed"})
     return {"deleted": agent_id}
 
 
@@ -129,11 +126,8 @@ async def stop_agent(agent_id: str) -> dict:
     updated = await repository.update_agent_status(agent_id, "stopped")
     if not updated:
         raise HTTPException(status_code=404, detail="Agent not found")
-    # Also queue shutdown command for real agents with heartbeat loops
     _pending_shutdown.add(agent_id)
-    await manager.broadcast(
-        {"type": "agent_status", "data": {"id": agent_id, "status": "stopped"}}
-    )
+    await _broadcast_agent_status({"id": agent_id, "status": "stopped"})
     return {"status": "stopped", "agent_id": agent_id}
 
 
@@ -144,7 +138,5 @@ async def resume_agent(agent_id: str) -> dict:
     if not updated:
         raise HTTPException(status_code=404, detail="Agent not found")
     _pending_shutdown.discard(agent_id)
-    await manager.broadcast(
-        {"type": "agent_status", "data": {"id": agent_id, "status": "online"}}
-    )
+    await _broadcast_agent_status({"id": agent_id, "status": "online"})
     return {"status": "online", "agent_id": agent_id}

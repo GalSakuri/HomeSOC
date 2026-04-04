@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 from pydantic import BaseModel, Field
 
 from .schemas import NormalizedEvent
 
 
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class EventBatch(BaseModel):
     agent_id: str
     batch_id: str
     events: list[NormalizedEvent]
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=_utc_now)
 
 
 class HeartbeatPayload(BaseModel):
@@ -24,7 +28,7 @@ class HeartbeatPayload(BaseModel):
     version: str = "0.1.0"
     uptime_seconds: float = 0
     events_buffered: int = 0
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=_utc_now)
 
 
 class BatchResponse(BaseModel):

@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+logger = logging.getLogger("homesoc.rules_loader")
 
 
 def load_rules(rules_dir: str) -> list[dict[str, Any]]:
@@ -14,7 +17,7 @@ def load_rules(rules_dir: str) -> list[dict[str, Any]]:
     rules_path = Path(rules_dir)
 
     if not rules_path.exists():
-        print(f"[RulesLoader] Rules directory not found: {rules_dir}")
+        logger.warning("Rules directory not found: %s", rules_dir)
         return rules
 
     for yml_file in rules_path.glob("*.yml"):
@@ -25,9 +28,9 @@ def load_rules(rules_dir: str) -> list[dict[str, Any]]:
                 for rule in data["rules"]:
                     rule["_source_file"] = yml_file.name
                     rules.append(rule)
-                print(f"[RulesLoader] Loaded {len(data['rules'])} rules from {yml_file.name}")
+                logger.info("Loaded %d rules from %s", len(data["rules"]), yml_file.name)
         except (yaml.YAMLError, OSError) as e:
-            print(f"[RulesLoader] Error loading {yml_file}: {e}")
+            logger.error("Error loading %s: %s", yml_file, e)
 
-    print(f"[RulesLoader] Total rules loaded: {len(rules)}")
+    logger.info("Total rules loaded: %d", len(rules))
     return rules

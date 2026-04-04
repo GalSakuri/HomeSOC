@@ -11,7 +11,7 @@ export function useAlerts(params?: Record<string, string | number>) {
     setLoading(true);
     try {
       const data = await api.getAlerts(params);
-      setAlerts(data as unknown as Alert[]);
+      setAlerts(data);
     } catch (e) {
       console.error("Failed to fetch alerts:", e);
     } finally {
