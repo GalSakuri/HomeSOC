@@ -7,6 +7,7 @@ import { AlertsPanel } from "../components/dashboard/AlertsPanel";
 import { AgentStatus } from "../components/dashboard/AgentStatus";
 import { LiveFeed } from "../components/dashboard/LiveFeed";
 import { CategoryBreakdown } from "../components/dashboard/CategoryBreakdown";
+import { Button } from "../components/ui/button";
 import { api } from "../api/client";
 
 export function DashboardPage() {
@@ -32,28 +33,29 @@ export function DashboardPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-soc-text">Security Overview</h2>
+        <h2 className="text-lg font-semibold text-foreground">Security Overview</h2>
         <div className="flex items-center gap-3">
           {genResult && <span className="text-xs text-soc-text/60">{genResult}</span>}
-          <button
+          <Button
             onClick={handleGenerate}
             disabled={generating}
-            className="px-3 py-1.5 text-sm bg-soc-accent hover:bg-soc-accent/90 disabled:opacity-50 text-white rounded-md transition-colors"
+            size="sm"
           >
             {generating ? "Generating..." : "Generate Test Events"}
-          </button>
+          </Button>
         </div>
       </div>
 
-      <StatCards summary={summary} />
+      <div className="grid grid-cols-[1fr_200px] gap-4 items-stretch">
+        <EventTimeline events={liveEvents} />
+        <StatCards summary={summary} />
+      </div>
 
-      <EventTimeline events={liveEvents} />
-
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2">
-          <LiveFeed events={liveEvents} />
+      <div className="grid grid-cols-3 gap-4 items-stretch">
+        <div className="col-span-2 flex flex-col">
+          <LiveFeed events={liveEvents} className="flex-1" />
         </div>
-        <div className="space-y-4">
+        <div className="flex flex-col gap-4">
           <AlertsPanel alerts={liveAlerts.length > 0 ? liveAlerts : summary?.recent_alerts || []} />
           <AgentStatus />
         </div>

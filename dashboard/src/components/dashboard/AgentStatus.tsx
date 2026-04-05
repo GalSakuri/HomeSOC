@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import { api } from "../../api/client";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { SetupInstructionsModal } from "./SetupInstructionsModal";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
+import { Button } from "../ui/button";
 
 const AGENT_POLL_INTERVAL_MS = 15_000;
 
@@ -196,22 +198,25 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
   };
 
   return (
-    <div className="bg-soc-card border border-soc-border rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-soc-text flex items-center gap-2">
-          <Monitor className="w-4 h-4 text-soc-accent" />
-          Agents
-        </h3>
-        {showRemove && (
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-soc-accent hover:bg-soc-accent/80 text-white rounded-md transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Agent
-          </button>
-        )}
-      </div>
+    <Card>
+      <CardHeader className="pb-3 px-4 pt-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Monitor className="w-4 h-4 text-primary" />
+            Agents
+          </CardTitle>
+          {showRemove && (
+            <Button
+              size="sm"
+              onClick={() => setShowAddModal(true)}
+              className="h-7 px-2.5 text-xs gap-1"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Agent
+            </Button>
+          )}
+        </div>
+      </CardHeader>
 
       {showAddModal && (
         <AddAgentModal onClose={() => setShowAddModal(false)} onAdded={load} />
@@ -225,91 +230,93 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
         />
       )}
 
-      <div className="space-y-3">
-        {agents.length === 0 ? (
-          <p className="text-sm text-soc-muted text-center py-4">
-            No agents registered
-          </p>
-        ) : (
-          agents.map((agent) => {
-            const sc = statusConfig[agent.status] || statusConfig.unknown;
-            const isOnline = agent.status === "online";
-            const isStopped = agent.status === "stopped";
-            const isOffline = agent.status === "offline";
+      <CardContent className="px-4 pb-4">
+        <div className="space-y-3">
+          {agents.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No agents registered
+            </p>
+          ) : (
+            agents.map((agent) => {
+              const sc = statusConfig[agent.status] || statusConfig.unknown;
+              const isOnline = agent.status === "online";
+              const isStopped = agent.status === "stopped";
+              const isOffline = agent.status === "offline";
 
-            return (
-              <div
-                key={agent.id}
-                className="flex items-center justify-between p-3 bg-soc-bg/50 rounded-lg border border-soc-border"
-              >
-                <div className="flex items-center gap-3">
-                  <Monitor className="w-4 h-4 text-soc-muted" />
-                  <div>
-                    <p className="text-sm text-soc-text font-medium">
-                      {agent.hostname}
-                    </p>
-                    <p className="text-xs text-soc-muted">
-                      {agent.platform} &middot; {agent.id}
-                    </p>
+              return (
+                <div
+                  key={agent.id}
+                  className="flex items-center justify-between p-3 bg-background/50 rounded-lg border border-border"
+                >
+                  <div className="flex items-center gap-3">
+                    <Monitor className="w-4 h-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-sm text-foreground font-medium">
+                        {agent.hostname}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {agent.platform} &middot; {agent.id}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${sc.dot}`} />
-                    <span className={`text-xs ${sc.text}`}>{sc.label}</span>
+                    <div className="flex items-center gap-1.5">
+                      <div className={`w-2 h-2 rounded-full ${sc.dot}`} />
+                      <span className={`text-xs ${sc.text}`}>{sc.label}</span>
+                    </div>
+
+                    {/* Setup button — shown on offline agents */}
+                    {isOffline && showRemove && (
+                      <button
+                        onClick={() => setSetupAgent({ id: agent.id, platform: agent.platform })}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-soc-accent hover:bg-soc-accent/10 border border-soc-accent/30 transition-colors"
+                        title="Show setup instructions"
+                      >
+                        <Terminal className="w-3 h-3" />
+                        Setup
+                      </button>
+                    )}
+
+                    {/* Stop button — shown when agent is online */}
+                    {isOnline && (
+                      <button
+                        onClick={() => handleStop(agent.id, agent.hostname)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-soc-danger hover:bg-soc-danger/10 border border-soc-danger/30 transition-colors"
+                        title="Stop agent — signals the agent to shut down on its next heartbeat (up to 30s). To stop immediately, press Ctrl+C in the terminal where the agent is running."
+                      >
+                        <Square className="w-3 h-3" />
+                        Stop
+                      </button>
+                    )}
+
+                    {/* Resume button — shown when agent is stopped */}
+                    {isStopped && (
+                      <button
+                        onClick={() => handleResume(agent.id)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-soc-success hover:bg-soc-success/10 border border-soc-success/30 transition-colors"
+                        title="Resume agent — start collecting logs again"
+                      >
+                        <Play className="w-3 h-3" />
+                        Resume
+                      </button>
+                    )}
+
+                    {showRemove && (
+                      <button
+                        onClick={() => handleRemove(agent.id, agent.hostname)}
+                        className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                        title="Remove agent"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
-
-                  {/* Setup button — shown on offline agents */}
-                  {isOffline && showRemove && (
-                    <button
-                      onClick={() => setSetupAgent({ id: agent.id, platform: agent.platform })}
-                      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-soc-accent hover:bg-soc-accent/10 border border-soc-accent/30 transition-colors"
-                      title="Show setup instructions"
-                    >
-                      <Terminal className="w-3 h-3" />
-                      Setup
-                    </button>
-                  )}
-
-                  {/* Stop button — shown when agent is online */}
-                  {isOnline && (
-                    <button
-                      onClick={() => handleStop(agent.id, agent.hostname)}
-                      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-soc-danger hover:bg-soc-danger/10 border border-soc-danger/30 transition-colors"
-                      title="Stop agent — signals the agent to shut down on its next heartbeat (up to 30s). To stop immediately, press Ctrl+C in the terminal where the agent is running."
-                    >
-                      <Square className="w-3 h-3" />
-                      Stop
-                    </button>
-                  )}
-
-                  {/* Resume button — shown when agent is stopped */}
-                  {isStopped && (
-                    <button
-                      onClick={() => handleResume(agent.id)}
-                      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-soc-success hover:bg-soc-success/10 border border-soc-success/30 transition-colors"
-                      title="Resume agent — start collecting logs again"
-                    >
-                      <Play className="w-3 h-3" />
-                      Resume
-                    </button>
-                  )}
-
-                  {showRemove && (
-                    <button
-                      onClick={() => handleRemove(agent.id, agent.hostname)}
-                      className="p-1 rounded hover:bg-soc-danger/10 text-soc-muted hover:text-soc-danger transition-colors"
-                      title="Remove agent"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
                 </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-    </div>
+              );
+            })
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

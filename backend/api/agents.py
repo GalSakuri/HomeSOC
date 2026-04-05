@@ -79,7 +79,10 @@ async def heartbeat(hb: HeartbeatPayload) -> dict:
         hb.agent_id, hb.hostname, hb.platform, hb.ip_address, hb.version, "online"
     )
     await repository.upsert_agent(agent)
-    return {"status": "ok"}
+
+    # Return current config so the agent can apply collector toggles
+    config = existing.get("config") if existing else None
+    return {"status": "ok", "config": config or {}}
 
 
 @router.post("/deregister", dependencies=[Depends(require_api_key)])
@@ -110,7 +113,7 @@ async def list_agents() -> list[dict]:
     return await repository.get_agents()
 
 
-@router.delete("/agents/{agent_id}", dependencies=[Depends(require_api_key)])
+@router.delete("/agents/{agent_id}")
 async def delete_agent(agent_id: str) -> dict:
     deleted = await repository.delete_agent(agent_id)
     if not deleted:
@@ -120,7 +123,7 @@ async def delete_agent(agent_id: str) -> dict:
     return {"deleted": agent_id}
 
 
-@router.post("/agents/{agent_id}/stop", dependencies=[Depends(require_api_key)])
+@router.post("/agents/{agent_id}/stop")
 async def stop_agent(agent_id: str) -> dict:
     """Request an agent to shut down gracefully."""
     updated = await repository.update_agent_status(agent_id, "stopped")
@@ -129,6 +132,15 @@ async def stop_agent(agent_id: str) -> dict:
     _pending_shutdown.add(agent_id)
     await _broadcast_agent_status({"id": agent_id, "status": "stopped"})
     return {"status": "stopped", "agent_id": agent_id}
+
+
+@router.patch("/agents/{agent_id}/config")
+async def update_agent_config(agent_id: str, body: dict) -> dict:
+    """Save collector configuration for an agent (delivered via next heartbeat)."""
+    updated = await repository.update_agent_config(agent_id, body)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return {"agent_id": agent_id, "config": body}
 
 
 @router.post("/agents/{agent_id}/resume")

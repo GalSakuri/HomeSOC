@@ -20,14 +20,59 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from agents.common.base_agent import BaseCollector
 from shared.enums import EventCategory, Platform, Severity
 
-# Event types to subscribe to (keep focused to control volume)
+# Maps user-facing toggle keys to the eslogger event types they cover.
+# If a group is disabled in config, events of those types are dropped at normalize time.
+EVENT_GROUP_MAP: dict[str, list[str]] = {
+    "process_exec":        ["exec"],
+    "file_events":         ["open", "create", "rename"],
+    "file_deletion":       ["unlink"],
+    "auth":                ["authentication"],
+    "sudo_su":             ["sudo", "su"],
+    "ssh":                 ["openssh_login", "openssh_logout"],
+    "privilege_escalation":["setuid", "setgid"],
+    "process_injection":   ["remote_thread_create", "get_task"],
+    "kernel_extensions":   ["kextload", "kextunload"],
+    "volume_mounts":       ["mount", "unmount"],
+    "screen_sharing":      ["screensharing_attach"],
+    "malware_detection":   ["xp_malware_detected", "xp_malware_remediated"],
+    "process_signals":     ["signal"],
+}
+
+# Reverse map: eslogger event type → group key
+_ES_TYPE_TO_GROUP: dict[str, str] = {
+    es_type: group
+    for group, es_types in EVENT_GROUP_MAP.items()
+    for es_type in es_types
+}
+
+# Event types to subscribe to
 SUBSCRIBED_EVENTS = [
+    # Process
     "exec",
+    "signal",
+    "remote_thread_create",
+    "get_task",
+    "setuid",
+    "setgid",
+    # File
     "open",
     "create",
     "rename",
+    "unlink",
+    # Auth / privilege
     "authentication",
-    "signal",
+    "sudo",
+    "su",
+    "openssh_login",
+    "openssh_logout",
+    # System
+    "kextload",
+    "kextunload",
+    "mount",
+    "unmount",
+    "screensharing_attach",
+    "xp_malware_detected",
+    "xp_malware_remediated",
 ]
 
 # Paths to filter out (high-volume, low-value system noise)
@@ -50,6 +95,9 @@ FILTERED_PROCESS_NAMES = [
     "launchservicesd",
 ]
 
+# Filesystem types that indicate external/removable media
+REMOVABLE_FS_TYPES = {"msdos", "exfat", "ntfs", "udf", "cd9660", "hfs"}
+
 
 class EsloggerCollector(BaseCollector):
     """Streams eslogger output and normalizes events."""
@@ -58,6 +106,26 @@ class EsloggerCollector(BaseCollector):
         super().__init__(agent_id)
         self.event_types = event_types or SUBSCRIBED_EVENTS
         self._process: asyncio.subprocess.Process | None = None
+        # Groups that are explicitly disabled — populated from heartbeat config
+        self._disabled_groups: set[str] = set()
+
+    def apply_config(self, config: dict) -> None:
+        """Apply collector config received from backend heartbeat response."""
+        groups = config.get("event_groups", {})
+        new_disabled = {group for group, enabled in groups.items() if not enabled}
+        if new_disabled == self._disabled_groups:
+            return
+        self._disabled_groups = new_disabled
+        if self._disabled_groups:
+            print(f"[EsloggerCollector] Disabled groups: {', '.join(sorted(self._disabled_groups))}")
+        else:
+            print("[EsloggerCollector] All groups enabled")
+
+    def _is_group_disabled(self, es_event_type: str) -> bool:
+        if not self._disabled_groups:
+            return False
+        group = _ES_TYPE_TO_GROUP.get(es_event_type)
+        return group in self._disabled_groups
 
     async def start(self, event_callback: Callable[[dict], Coroutine]) -> None:
         self._running = True
@@ -109,19 +177,26 @@ class EsloggerCollector(BaseCollector):
     def _normalize(self, raw: dict) -> dict | None:
         """Convert eslogger JSON to a NormalizedEvent dict."""
         event_type = raw.get("event_type", "")
+
+        # Drop event if its group is disabled in config
+        if self._is_group_disabled(event_type):
+            return None
         process_info = raw.get("process", {})
         executable = process_info.get("executable", {})
         exec_path = executable.get("path", "")
         process_name = os.path.basename(exec_path)
 
-        # Filter noise
-        if process_name in FILTERED_PROCESS_NAMES:
-            return None
-        for prefix in FILTERED_PATH_PREFIXES:
-            if exec_path.startswith(prefix):
+        # Filter noise — only for process-originating events
+        if event_type not in ("kextload", "kextunload", "mount", "unmount",
+                               "xp_malware_detected", "xp_malware_remediated",
+                               "screensharing_attach", "openssh_login", "openssh_logout"):
+            if process_name in FILTERED_PROCESS_NAMES:
                 return None
+            for prefix in FILTERED_PATH_PREFIXES:
+                if exec_path.startswith(prefix):
+                    return None
 
-        # Extract common process fields
+        # Common process fields (used by most events)
         base = {
             "agent_id": self.agent_id,
             "platform": Platform.MACOS.value,
@@ -135,16 +210,45 @@ class EsloggerCollector(BaseCollector):
             "raw": raw,
         }
 
+        # Route by event type
         if event_type == "exec":
             return self._normalize_exec(raw, base)
         elif event_type in ("open", "create", "rename"):
             return self._normalize_file(raw, base, event_type)
+        elif event_type == "unlink":
+            return self._normalize_unlink(raw, base)
         elif event_type == "authentication":
             return self._normalize_auth(raw, base)
         elif event_type == "signal":
             return self._normalize_signal(raw, base)
+        elif event_type == "remote_thread_create":
+            return self._normalize_remote_thread(raw, base)
+        elif event_type == "get_task":
+            return self._normalize_get_task(raw, base)
+        elif event_type in ("setuid", "setgid"):
+            return self._normalize_setuid(raw, base, event_type)
+        elif event_type == "sudo":
+            return self._normalize_sudo(raw, base)
+        elif event_type == "su":
+            return self._normalize_su(raw, base)
+        elif event_type == "openssh_login":
+            return self._normalize_ssh_login(raw, base)
+        elif event_type == "openssh_logout":
+            return self._normalize_ssh_logout(raw, base)
+        elif event_type in ("kextload", "kextunload"):
+            return self._normalize_kext(raw, base, event_type)
+        elif event_type in ("mount", "unmount"):
+            return self._normalize_mount(raw, base, event_type)
+        elif event_type == "screensharing_attach":
+            return self._normalize_screensharing(raw, base)
+        elif event_type == "xp_malware_detected":
+            return self._normalize_malware_detected(raw, base)
+        elif event_type == "xp_malware_remediated":
+            return self._normalize_malware_remediated(raw, base)
 
         return None
+
+    # ── Existing normalizers ────────────────────────────────────────────────
 
     def _normalize_exec(self, raw: dict, base: dict) -> dict:
         event_data = raw.get("event", {})
@@ -158,7 +262,6 @@ class EsloggerCollector(BaseCollector):
                 args.append(arg)
 
         severity = Severity.INFO.value
-        # Flag processes executing from suspicious locations
         if any(s in target_path.lower() for s in ["/tmp/", "/downloads/", "/var/tmp/"]):
             severity = Severity.MEDIUM.value
 
@@ -169,7 +272,7 @@ class EsloggerCollector(BaseCollector):
             "severity": severity,
             "process_name": os.path.basename(target_path),
             "process_path": target_path,
-            "process_args": args[:20],  # Cap at 20 args
+            "process_args": args[:20],
         }
 
     def _normalize_file(self, raw: dict, base: dict, es_event_type: str) -> dict | None:
@@ -193,8 +296,6 @@ class EsloggerCollector(BaseCollector):
 
         if not file_path:
             return None
-
-        # Filter high-volume temp file paths
         if file_path.startswith("/private/var/folders/"):
             return None
 
@@ -212,7 +313,6 @@ class EsloggerCollector(BaseCollector):
         auth_data = event_data.get("authentication", {})
         success = auth_data.get("success", False)
         auth_type = auth_data.get("type", "unknown")
-
         severity = Severity.INFO.value if success else Severity.MEDIUM.value
 
         return {
@@ -237,20 +337,263 @@ class EsloggerCollector(BaseCollector):
             "severity": Severity.LOW.value if sig == 9 else Severity.INFO.value,
         }
 
-    def _extract_timestamp(self, raw: dict) -> str:
-        """Extract event timestamp from eslogger output.
+    # ── New normalizers ─────────────────────────────────────────────────────
 
-        eslogger provides `time` as a seconds+nanoseconds pair under the
-        `process` or top-level `time` key.  `mach_time` is a Mach absolute
-        time (ticks since boot) and cannot be converted to wall-clock time
-        without the timebase, so we use `time` when available and fall back
-        to now().
-        """
-        # eslogger JSON includes a UNIX-epoch "time" field on each event
+    def _normalize_unlink(self, raw: dict, base: dict) -> dict | None:
+        """File deletion."""
+        event_data = raw.get("event", {})
+        target = event_data.get("unlink", {}).get("target", {})
+        file_path = target.get("path", "")
+        if not file_path or file_path.startswith("/private/var/folders/"):
+            return None
+
+        # Higher severity for deletions in sensitive locations
+        severity = Severity.INFO.value
+        sensitive = ["/etc/", "/Library/LaunchAgents/", "/Library/LaunchDaemons/",
+                     "/System/", "/usr/local/bin/"]
+        if any(file_path.startswith(s) for s in sensitive):
+            severity = Severity.MEDIUM.value
+
+        return {
+            **base,
+            "category": EventCategory.FILE.value,
+            "event_type": "file_delete",
+            "severity": severity,
+            "file_path": file_path,
+            "file_action": "delete",
+        }
+
+    def _normalize_remote_thread(self, raw: dict, base: dict) -> dict:
+        """Thread created in a different process — code injection indicator."""
+        event_data = raw.get("event", {})
+        target = event_data.get("remote_thread_create", {}).get("target", {})
+        target_path = target.get("executable", {}).get("path", "")
+
+        return {
+            **base,
+            "category": EventCategory.PROCESS.value,
+            "event_type": "remote_thread_create",
+            "severity": Severity.CRITICAL.value,
+            "file_path": target_path,  # target process binary
+        }
+
+    def _normalize_get_task(self, raw: dict, base: dict) -> dict:
+        """Process obtained task port of another process — inspection/injection."""
+        event_data = raw.get("event", {})
+        target = event_data.get("get_task", {}).get("target", {})
+        target_path = target.get("executable", {}).get("path", "")
+        target_pid = target.get("audit_token", {}).get("pid")
+
+        return {
+            **base,
+            "category": EventCategory.PROCESS.value,
+            "event_type": "task_inspect",
+            "severity": Severity.HIGH.value,
+            "file_path": target_path,
+            "process_pid": target_pid,
+        }
+
+    def _normalize_setuid(self, raw: dict, base: dict, es_event_type: str) -> dict:
+        """Privilege escalation via setuid/setgid."""
+        event_data = raw.get("event", {})
+        data = event_data.get(es_event_type, {})
+        new_id = data.get("uid", data.get("gid", 0))
+
+        # Setting to root (0) is the classic privilege escalation
+        severity = Severity.CRITICAL.value if new_id == 0 else Severity.HIGH.value
+
+        return {
+            **base,
+            "category": EventCategory.PROCESS.value,
+            "event_type": "privilege_escalation",
+            "severity": severity,
+            "auth_user": str(new_id),
+            "auth_method": es_event_type,
+            "auth_success": True,
+        }
+
+    def _normalize_sudo(self, raw: dict, base: dict) -> dict:
+        """sudo command executed."""
+        event_data = raw.get("event", {})
+        sudo_data = event_data.get("sudo", {})
+        accepted = sudo_data.get("accept", False)
+        command = sudo_data.get("command", "")
+        from_uid = sudo_data.get("from_uid", "")
+        to_uid = sudo_data.get("to_uid", 0)
+
+        severity = Severity.MEDIUM.value if accepted else Severity.HIGH.value
+
+        return {
+            **base,
+            "category": EventCategory.AUTHENTICATION.value,
+            "event_type": "sudo_command",
+            "severity": severity,
+            "auth_user": str(from_uid),
+            "auth_method": "sudo",
+            "auth_success": accepted,
+            "process_args": [command] if command else None,
+        }
+
+    def _normalize_su(self, raw: dict, base: dict) -> dict:
+        """su command — user switching."""
+        event_data = raw.get("event", {})
+        su_data = event_data.get("su", {})
+        success = su_data.get("success", False)
+        from_user = su_data.get("from_username", "")
+        to_user = su_data.get("to_username", "root")
+
+        severity = Severity.MEDIUM.value if success else Severity.HIGH.value
+
+        return {
+            **base,
+            "category": EventCategory.AUTHENTICATION.value,
+            "event_type": "su_command",
+            "severity": severity,
+            "auth_user": from_user,
+            "auth_method": f"su to {to_user}",
+            "auth_success": success,
+        }
+
+    def _normalize_ssh_login(self, raw: dict, base: dict) -> dict:
+        """Inbound SSH login attempt."""
+        event_data = raw.get("event", {})
+        ssh_data = event_data.get("openssh_login", {})
+        success = ssh_data.get("success", False)
+        source_addr = ssh_data.get("source_address", "")
+        username = ssh_data.get("username", "")
+        auth_type = ssh_data.get("auth_type", "unknown")
+
+        severity = Severity.LOW.value if success else Severity.HIGH.value
+
+        return {
+            **base,
+            "category": EventCategory.AUTHENTICATION.value,
+            "event_type": "ssh_login",
+            "severity": severity,
+            "auth_user": username,
+            "auth_method": f"ssh/{auth_type}",
+            "auth_success": success,
+            "src_ip": source_addr,
+        }
+
+    def _normalize_ssh_logout(self, raw: dict, base: dict) -> dict:
+        """SSH session ended."""
+        event_data = raw.get("event", {})
+        ssh_data = event_data.get("openssh_logout", {})
+        source_addr = ssh_data.get("source_address", "")
+        username = ssh_data.get("username", "")
+
+        return {
+            **base,
+            "category": EventCategory.AUTHENTICATION.value,
+            "event_type": "ssh_logout",
+            "severity": Severity.INFO.value,
+            "auth_user": username,
+            "auth_method": "ssh",
+            "auth_success": True,
+            "src_ip": source_addr,
+        }
+
+    def _normalize_kext(self, raw: dict, base: dict, es_event_type: str) -> dict:
+        """Kernel extension loaded or unloaded."""
+        event_data = raw.get("event", {})
+        kext_data = event_data.get(es_event_type, {})
+        identifier = kext_data.get("identifier", "")
+
+        # Non-Apple kexts are unusual and worth flagging
+        is_apple = identifier.startswith("com.apple.")
+        severity = Severity.LOW.value if is_apple else Severity.HIGH.value
+
+        return {
+            **base,
+            "category": EventCategory.SYSTEM.value,
+            "event_type": es_event_type,  # kextload / kextunload
+            "severity": severity,
+            "file_path": identifier,  # bundle ID as identifier
+        }
+
+    def _normalize_mount(self, raw: dict, base: dict, es_event_type: str) -> dict:
+        """Volume mounted or unmounted — highlights removable media."""
+        event_data = raw.get("event", {})
+        mount_data = event_data.get(es_event_type, {})
+        statfs = mount_data.get("statfs", {})
+        mount_point = statfs.get("f_mntonname", "")
+        mount_from = statfs.get("f_mntfromname", "")
+        fs_type = statfs.get("f_fstypename", "").lower()
+
+        # External/removable media gets medium severity
+        is_external = fs_type in REMOVABLE_FS_TYPES or "/Volumes/" in mount_point
+        severity = Severity.MEDIUM.value if is_external else Severity.INFO.value
+
+        label = "volume_mount" if es_event_type == "mount" else "volume_unmount"
+        detail = mount_point or mount_from
+
+        return {
+            **base,
+            "category": EventCategory.SYSTEM.value,
+            "event_type": label,
+            "severity": severity,
+            "file_path": detail,  # what was mounted / where
+        }
+
+    def _normalize_screensharing(self, raw: dict, base: dict) -> dict:
+        """Screen sharing session attached."""
+        event_data = raw.get("event", {})
+        ss_data = event_data.get("screensharing_attach", {})
+        success = ss_data.get("success", False)
+        source_addr = ss_data.get("source_address", "")
+        auth_type = ss_data.get("authentication_type", "unknown")
+        username = ss_data.get("authentication_username", "")
+
+        severity = Severity.HIGH.value if success else Severity.MEDIUM.value
+
+        return {
+            **base,
+            "category": EventCategory.SYSTEM.value,
+            "event_type": "screensharing_attach",
+            "severity": severity,
+            "auth_user": username,
+            "auth_method": auth_type,
+            "auth_success": success,
+            "src_ip": source_addr,
+        }
+
+    def _normalize_malware_detected(self, raw: dict, base: dict) -> dict:
+        """XProtect detected malware."""
+        event_data = raw.get("event", {})
+        xp_data = event_data.get("xp_malware_detected", {})
+        malware_id = xp_data.get("malware_identifier", "unknown")
+        action = xp_data.get("action_taken", "")
+
+        return {
+            **base,
+            "category": EventCategory.SYSTEM.value,
+            "event_type": "malware_detected",
+            "severity": Severity.CRITICAL.value,
+            "file_path": malware_id,
+            "process_args": [action] if action else None,
+        }
+
+    def _normalize_malware_remediated(self, raw: dict, base: dict) -> dict:
+        """XProtect remediated (removed) malware."""
+        event_data = raw.get("event", {})
+        xp_data = event_data.get("xp_malware_remediated", {})
+        malware_id = xp_data.get("malware_identifier", "unknown")
+        action = xp_data.get("action_taken", "")
+
+        return {
+            **base,
+            "category": EventCategory.SYSTEM.value,
+            "event_type": "malware_remediated",
+            "severity": Severity.HIGH.value,
+            "file_path": malware_id,
+            "process_args": [action] if action else None,
+        }
+
+    def _extract_timestamp(self, raw: dict) -> str:
         time_field = raw.get("time")
         if isinstance(time_field, (int, float)):
             return datetime.fromtimestamp(time_field, tz=timezone.utc).isoformat()
-        # Some eslogger versions nest it as seconds + nanoseconds
         if isinstance(time_field, dict):
             secs = time_field.get("seconds", 0)
             nsecs = time_field.get("nanoseconds", 0)

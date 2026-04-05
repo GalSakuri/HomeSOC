@@ -56,6 +56,7 @@ export interface AgentInfo {
   version: string;
   last_heartbeat?: string;
   status: AgentStatus;
+  config?: { event_groups?: Record<string, boolean> };
 }
 
 export interface DashboardSummary {

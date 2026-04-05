@@ -33,7 +33,8 @@ interface FAQ {
 
 interface GuideSection {
   id: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;   // full Tailwind text-color class, e.g. "text-blue-400"
   title: string;
   intro: string;
   content: string[];
@@ -44,7 +45,8 @@ const sections: GuideSection[] = [
   /* ── 1. Overview ── */
   {
     id: "overview",
-    icon: <BookOpen className="w-4 h-4" />,
+    icon: BookOpen,
+    iconColor: "text-blue-400",
     title: "What is HomeSOC?",
     intro:
       "HomeSOC (Home Security Operations Center) is a self-hosted system that monitors the security of your local devices in real time. Think of it as a mini enterprise security platform — but designed for your home network.",
@@ -77,7 +79,8 @@ const sections: GuideSection[] = [
   /* ── 2. Dashboard ── */
   {
     id: "dashboard",
-    icon: <LayoutDashboard className="w-4 h-4" />,
+    icon: LayoutDashboard,
+    iconColor: "text-sky-400",
     title: "Dashboard Page",
     intro:
       "The Dashboard is your home screen — a real-time snapshot of the security posture across all your monitored devices.",
@@ -108,7 +111,8 @@ const sections: GuideSection[] = [
   /* ── 3. Events ── */
   {
     id: "events",
-    icon: <Activity className="w-4 h-4" />,
+    icon: Activity,
+    iconColor: "text-emerald-400",
     title: "Events Page",
     intro:
       "The Events page is your detailed log of every security event collected by your agents. This is where you go to investigate specific activity.",
@@ -143,7 +147,8 @@ const sections: GuideSection[] = [
   /* ── 4. Alerts ── */
   {
     id: "alerts",
-    icon: <AlertTriangle className="w-4 h-4" />,
+    icon: AlertTriangle,
+    iconColor: "text-amber-400",
     title: "Alerts Page",
     intro:
       "Alerts are generated automatically when incoming events match a detection rule. They represent activity that HomeSOC believes is suspicious or dangerous.",
@@ -177,7 +182,8 @@ const sections: GuideSection[] = [
   /* ── 5. Agents ── */
   {
     id: "agents",
-    icon: <Monitor className="w-4 h-4" />,
+    icon: Monitor,
+    iconColor: "text-green-400",
     title: "Agents Page",
     intro:
       "Agents are the lightweight programs that run on each device you want to monitor. They collect security events and send them to the backend.",
@@ -215,7 +221,8 @@ const sections: GuideSection[] = [
   /* ── 6. Rules ── */
   {
     id: "rules",
-    icon: <Shield className="w-4 h-4" />,
+    icon: Shield,
+    iconColor: "text-violet-400",
     title: "Detection Rules Page",
     intro:
       "Detection rules define what HomeSOC considers suspicious. They are written in YAML and loaded by the backend on startup.",
@@ -253,7 +260,8 @@ const sections: GuideSection[] = [
   /* ── 7. Settings ── */
   {
     id: "settings",
-    icon: <Settings className="w-4 h-4" />,
+    icon: Settings,
+    iconColor: "text-slate-400",
     title: "Settings Page",
     intro:
       "The Settings page lets you customize the dashboard experience. All settings are saved in your browser and persist across page reloads.",
@@ -284,7 +292,8 @@ const sections: GuideSection[] = [
   /* ── 8. WebSocket / Live Connection ── */
   {
     id: "connection",
-    icon: <Globe className="w-4 h-4" />,
+    icon: Globe,
+    iconColor: "text-cyan-400",
     title: "Live Connection (WebSocket)",
     intro:
       "The header shows a connection status indicator in the top-right corner. This reflects the real-time WebSocket connection between your browser and the backend.",
@@ -313,7 +322,8 @@ const sections: GuideSection[] = [
   /* ── 9. Backend & API ── */
   {
     id: "backend",
-    icon: <Database className="w-4 h-4" />,
+    icon: Database,
+    iconColor: "text-orange-400",
     title: "Backend Server",
     intro:
       "The backend is the brain of HomeSOC. It receives events from agents, stores them, runs detection, generates alerts, and serves both the REST API and the WebSocket feed.",
@@ -348,7 +358,8 @@ const sections: GuideSection[] = [
   /* ── 10. Running & Testing ── */
   {
     id: "running",
-    icon: <Terminal className="w-4 h-4" />,
+    icon: Terminal,
+    iconColor: "text-lime-400",
     title: "Getting Started & Testing",
     intro:
       "How to start the system, generate test data, and verify everything works end to end.",
@@ -381,7 +392,8 @@ const sections: GuideSection[] = [
   /* ── 11. Architecture Deep Dive ── */
   {
     id: "architecture",
-    icon: <Workflow className="w-4 h-4" />,
+    icon: Workflow,
+    iconColor: "text-indigo-400",
     title: "Architecture & Data Flow",
     intro:
       "Understanding how data flows through HomeSOC from collection to visualization.",
@@ -410,7 +422,8 @@ const sections: GuideSection[] = [
   /* ── 12. Security & Privacy ── */
   {
     id: "security",
-    icon: <Lock className="w-4 h-4" />,
+    icon: Lock,
+    iconColor: "text-rose-400",
     title: "Security & Privacy",
     intro:
       "HomeSOC is designed to be secure and privacy-respecting by default.",
@@ -444,22 +457,22 @@ function FAQItem({ faq }: { faq: FAQ }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border border-soc-border rounded-lg overflow-hidden">
+    <div className="border border-border/40 rounded-lg overflow-hidden bg-background/20 transition-all duration-200 hover:border-primary/20">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-soc-surface/50 transition-colors"
+        className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-primary/5 transition-colors group"
       >
-        <HelpCircle className="w-4 h-4 text-soc-accent flex-shrink-0 mt-0.5" />
-        <span className="text-sm font-medium text-soc-text flex-1">{faq.q}</span>
+        <HelpCircle className="w-4 h-4 text-primary/60 flex-shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
+        <span className="text-sm font-medium text-foreground flex-1">{faq.q}</span>
         {open ? (
-          <ChevronDown className="w-4 h-4 text-soc-muted flex-shrink-0 mt-0.5" />
+          <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5 transition-transform" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-soc-muted flex-shrink-0 mt-0.5" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5 transition-transform" />
         )}
       </button>
       {open && (
-        <div className="px-4 pb-3 pl-11">
-          <p className="text-sm text-soc-muted whitespace-pre-line leading-relaxed">{faq.a}</p>
+        <div className="px-4 pb-4 pl-11 border-t border-border/30 pt-3">
+          <p className="text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{faq.a}</p>
         </div>
       )}
     </div>
@@ -467,33 +480,49 @@ function FAQItem({ faq }: { faq: FAQ }) {
 }
 
 function SectionCard({ section, expanded, onToggle }: { section: GuideSection; expanded: boolean; onToggle: () => void }) {
+  const Icon = section.icon;
   return (
-    <div id={section.id} className="bg-soc-card border border-soc-border rounded-lg overflow-hidden">
+    <div
+      id={section.id}
+      className={`rounded-lg overflow-hidden transition-all duration-200 ${
+        expanded
+          ? "border border-border/60 shadow-lg shadow-black/20 bg-gradient-to-br from-card to-card/80"
+          : "border border-border/40 bg-gradient-to-br from-card/80 to-background/60 hover:border-border/70"
+      }`}
+    >
       {/* Header — always visible */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-soc-surface/30 transition-colors"
+        className={`w-full flex items-center gap-3 px-5 py-4 text-left transition-colors group ${
+          expanded ? "hover:bg-primary/5" : "hover:bg-primary/5"
+        }`}
       >
-        <span className="text-soc-accent">{section.icon}</span>
-        <span className="text-sm font-semibold text-soc-text flex-1">{section.title}</span>
+        <span className={`flex-shrink-0 transition-colors ${section.iconColor}`}>
+          <Icon className="w-4 h-4" />
+        </span>
+        <span className={`text-sm font-semibold flex-1 transition-colors ${
+          expanded ? "text-foreground" : "text-foreground/80 group-hover:text-foreground"
+        }`}>
+          {section.title}
+        </span>
         {expanded ? (
-          <ChevronDown className="w-4 h-4 text-soc-muted" />
+          <ChevronDown className="w-4 h-4 text-muted-foreground/60 flex-shrink-0 transition-transform" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-soc-muted" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0 transition-transform group-hover:text-muted-foreground" />
         )}
       </button>
 
       {expanded && (
-        <div className="border-t border-soc-border">
+        <div className="border-t border-border/40 bg-background/30">
           {/* Intro */}
           <div className="px-5 pt-4 pb-2">
-            <p className="text-sm text-soc-text leading-relaxed">{section.intro}</p>
+            <p className="text-sm text-foreground/90 leading-relaxed">{section.intro}</p>
           </div>
 
           {/* Content blocks */}
           <div className="px-5 pb-4 space-y-3">
             {section.content.map((block, i) => (
-              <div key={i} className="text-sm text-soc-muted leading-relaxed whitespace-pre-line">
+              <div key={i} className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
                 {renderBlock(block)}
               </div>
             ))}
@@ -501,8 +530,8 @@ function SectionCard({ section, expanded, onToggle }: { section: GuideSection; e
 
           {/* FAQ */}
           {section.faqs.length > 0 && (
-            <div className="border-t border-soc-border px-5 py-4">
-              <h4 className="text-xs font-semibold text-soc-muted uppercase tracking-wider mb-3">
+            <div className="border-t border-border/40 px-5 py-4">
+              <h4 className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest mb-3">
                 Frequently Asked Questions
               </h4>
               <div className="space-y-2">
@@ -524,7 +553,7 @@ function renderBlock(text: string): React.ReactNode {
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <span key={i} className="font-medium text-soc-text">
+        <span key={i} className="font-medium text-foreground">
           {part.slice(2, -2)}
         </span>
       );
@@ -550,44 +579,49 @@ export function GuidePage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-soc-text flex items-center gap-2">
-            <BookOpen className="w-5 h-5 text-soc-accent" />
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-blue-400" />
             Guide & FAQ
           </h2>
-          <p className="text-xs text-soc-muted mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Everything you need to know about HomeSOC — click any section to expand.
           </p>
         </div>
       </div>
 
       {/* Quick nav */}
-      <div className="bg-soc-card border border-soc-border rounded-lg p-4">
-        <h3 className="text-xs font-semibold text-soc-muted uppercase tracking-wider mb-3">
+      <div className="bg-gradient-to-br from-card/80 to-background/60 border border-border/50 rounded-lg p-4">
+        <h3 className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-3">
           Jump to section
         </h3>
         <div className="flex flex-wrap gap-2">
-          {sections.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => jumpTo(s.id)}
-              className="flex items-center gap-1.5 text-xs text-soc-muted hover:text-soc-accent px-2.5 py-1.5 rounded-lg border border-soc-border hover:border-soc-accent/40 transition-colors"
-            >
-              {s.icon}
-              {s.title.replace(/ Page$/, "")}
-            </button>
-          ))}
+          {sections.map((s) => {
+            const NavIcon = s.icon;
+            return (
+              <button
+                key={s.id}
+                onClick={() => jumpTo(s.id)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground px-2.5 py-1.5 rounded-md border border-border/40 bg-background/30 hover:bg-primary/10 hover:border-primary/30 transition-all duration-150 group"
+              >
+                <NavIcon className={`w-3.5 h-3.5 ${s.iconColor} opacity-70 group-hover:opacity-100 transition-opacity`} />
+                {s.title.replace(/ Page$/, "")}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Sections */}
-      {sections.map((section) => (
-        <SectionCard
-          key={section.id}
-          section={section}
-          expanded={openId === section.id}
-          onToggle={() => setOpenId(openId === section.id ? null : section.id)}
-        />
-      ))}
+      <div className="space-y-2">
+        {sections.map((section) => (
+          <SectionCard
+            key={section.id}
+            section={section}
+            expanded={openId === section.id}
+            onToggle={() => setOpenId(openId === section.id ? null : section.id)}
+          />
+        ))}
+      </div>
     </div>
   );
 }

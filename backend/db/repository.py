@@ -205,6 +205,16 @@ async def upsert_agent(agent: dict) -> None:
     await db.commit()
 
 
+async def update_agent_config(agent_id: str, config: dict) -> bool:
+    db = await get_db()
+    cursor = await db.execute(
+        "UPDATE agents SET config = ? WHERE id = ?",
+        [json.dumps(config), agent_id],
+    )
+    await db.commit()
+    return cursor.rowcount > 0
+
+
 async def update_agent_status(agent_id: str, status: str) -> bool:
     db = await get_db()
     cursor = await db.execute(

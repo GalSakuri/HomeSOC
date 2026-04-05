@@ -10,7 +10,6 @@ from pydantic import BaseModel
 from shared.enums import AlertStatus
 
 from ..db import repository
-from .auth import require_api_key
 
 router = APIRouter(prefix="/api/v1", tags=["alerts"])
 
@@ -41,7 +40,7 @@ async def update_alert(alert_id: str, body: AlertStatusUpdate) -> dict:
     return {"id": alert_id, "status": body.status}
 
 
-@router.delete("/alerts", dependencies=[Depends(require_api_key)])
+@router.delete("/alerts")
 async def clear_alerts() -> dict:
     count = await repository.clear_alerts()
     return {"cleared": count}

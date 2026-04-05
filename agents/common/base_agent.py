@@ -90,12 +90,23 @@ class BaseAgent(abc.ABC):
                 platform=self.platform_name,
                 uptime_seconds=uptime,
             )
-            # Check for remote shutdown command
-            if resp and resp.get("command") == "shutdown":
-                print(f"[Agent:{self.agent_id}] Shutdown command received from backend")
-                await self.stop()
-                return
+            if resp:
+                # Check for remote shutdown command
+                if resp.get("command") == "shutdown":
+                    print(f"[Agent:{self.agent_id}] Shutdown command received from backend")
+                    await self.stop()
+                    return
+                # Apply collector config if backend returned one
+                config = resp.get("config")
+                if config:
+                    self._apply_config(config)
             await asyncio.sleep(30)
+
+    def _apply_config(self, config: dict) -> None:
+        """Push config received from backend to all collectors that support it."""
+        for collector in self.collectors:
+            if hasattr(collector, "apply_config"):
+                collector.apply_config(config)
 
     async def stop(self) -> None:
         self._running = False

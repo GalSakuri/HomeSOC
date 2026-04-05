@@ -8,8 +8,6 @@ from ..config import settings
 
 router = APIRouter(prefix="/api/v1/setup", tags=["setup"])
 
-# TODO: protect with require_jwt + require_role("admin") once dashboard auth is wired up
-
 _MACOS_INSTRUCTIONS = {
     "commands": [
         {

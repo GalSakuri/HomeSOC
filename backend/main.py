@@ -91,8 +91,9 @@ async def lifespan(app: FastAPI):
     logger.info("Detection rules loaded: %d", len(engine.rules))
     logger.info("Event retention: %d day(s)", settings.event_retention_days)
     logger.info("API Key: %s", api_key)
-    logger.info("  Set HOMESOC_API_KEY env var to use a fixed key")
-    logger.info("  Agents must send X-API-Key header on all requests")
+    logger.info("  Key persisted at backend/data/.api_key (0600) — stable across restarts")
+    logger.info("  Override with HOMESOC_API_KEY env var if needed")
+    logger.info("  Agents must send X-API-Key: <key> header on all requests")
     yield
     # Shutdown
     checker_task.cancel()

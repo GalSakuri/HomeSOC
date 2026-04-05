@@ -41,12 +41,25 @@ class NetworkCollector(BaseCollector):
         super().__init__(agent_id)
         self.poll_interval = poll_interval
         self._seen_connections: set[str] = set()
+        self._enabled: bool = True
+
+    def apply_config(self, config: dict) -> None:
+        """Apply collector config received from backend heartbeat response."""
+        groups = config.get("event_groups", {})
+        new_enabled = groups.get("network_connections", True)
+        if new_enabled == self._enabled:
+            return
+        self._enabled = new_enabled
+        print(f"[NetworkCollector] {'Enabled' if self._enabled else 'Disabled'} via config")
 
     async def start(self, event_callback: Callable[[dict], Coroutine]) -> None:
         self._running = True
         print(f"[NetworkCollector] Polling every {self.poll_interval}s")
 
         while self._running:
+            if not self._enabled:
+                await asyncio.sleep(self.poll_interval)
+                continue
             try:
                 connections = await self._scan()
                 for conn in connections:

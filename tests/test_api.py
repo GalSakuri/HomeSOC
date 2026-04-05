@@ -110,11 +110,9 @@ def test_get_nonexistent_event_returns_404(api):
     assert resp.status_code == 404
 
 
-def test_delete_events_requires_api_key(api):
+def test_delete_events_is_accessible(api):
+    # DELETE /events no longer requires API key — dashboard JWT users can clear events
     resp = api.delete("/api/v1/events")
-    assert resp.status_code == 401
-
-    resp = api.delete("/api/v1/events", headers=_api_key_header())
     assert resp.status_code == 200
 
 
@@ -154,9 +152,10 @@ def test_patch_nonexistent_alert_returns_404(api):
     assert resp.status_code == 404
 
 
-def test_delete_alerts_requires_api_key(api):
+def test_delete_alerts_is_accessible(api):
+    # DELETE /alerts no longer requires API key — dashboard JWT users can clear alerts
     resp = api.delete("/api/v1/alerts")
-    assert resp.status_code == 401
+    assert resp.status_code == 200
 
 
 # ── Agents CRUD ─────────────────────────────────────────────────────────

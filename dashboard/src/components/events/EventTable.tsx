@@ -1,21 +1,29 @@
-import { SecurityEvent } from "../../types/events";
+import { SecurityEvent, AgentInfo } from "../../types/events";
 import { useState, useMemo, useCallback } from "react";
 import { useSettings } from "../../contexts/SettingsContext";
 import { formatDateTime } from "../../utils/formatTime";
 import { severityBadge } from "../../utils/severity";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Card } from "../ui/card";
 
 interface EventTableProps {
   events: SecurityEvent[];
   loading?: boolean;
+  agents?: AgentInfo[];
 }
 
 type SortDir = "asc" | "desc" | null;
 
-export function EventTable({ events, loading }: EventTableProps) {
+export function EventTable({ events, loading, agents = [] }: EventTableProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
   const { settings } = useSettings();
+
+  const agentMap = useMemo(() => {
+    const m = new Map<string, string>();
+    agents.forEach((a) => m.set(a.id, a.hostname));
+    return m;
+  }, [agents]);
 
   const toggleSort = useCallback(() => {
     setSortDir((prev) => {
@@ -36,38 +44,39 @@ export function EventTable({ events, loading }: EventTableProps) {
 
   if (loading) {
     return (
-      <div className="bg-soc-card border border-soc-border rounded-lg p-8 text-center">
-        <p className="text-soc-muted">Loading events...</p>
-      </div>
+      <Card className="p-8 text-center">
+        <p className="text-muted-foreground">Loading events...</p>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-soc-card border border-soc-border rounded-lg overflow-hidden">
+    <Card className="overflow-hidden">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-soc-border text-left">
+          <tr className="border-b border-border text-left">
             <th
-              className="px-4 py-3 text-xs text-soc-muted font-medium cursor-pointer select-none hover:text-soc-text transition-colors"
+              className="px-4 py-3 text-xs text-muted-foreground font-medium cursor-pointer select-none hover:text-foreground transition-colors"
               onClick={toggleSort}
             >
               <span className="flex items-center gap-1.5">
                 Date & Time
                 {sortDir === "desc" ? (
-                  <ArrowDown className="w-3 h-3 text-soc-accent" />
+                  <ArrowDown className="w-3 h-3 text-primary" />
                 ) : sortDir === "asc" ? (
-                  <ArrowUp className="w-3 h-3 text-soc-accent" />
+                  <ArrowUp className="w-3 h-3 text-primary" />
                 ) : (
                   <ArrowUpDown className="w-3 h-3 opacity-40" />
                 )}
               </span>
             </th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Severity</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Category</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Type</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Process</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Details</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Source</th>
+            <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Severity</th>
+            <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Category</th>
+            <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Type</th>
+            <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Process</th>
+            <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Details</th>
+            <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Agent</th>
+            <th className="px-4 py-3 text-xs text-muted-foreground font-medium">Source</th>
           </tr>
         </thead>
         <tbody>
@@ -75,10 +84,10 @@ export function EventTable({ events, loading }: EventTableProps) {
             <>
               <tr
                 key={ev.id}
-                className="border-b border-soc-border/50 hover:bg-soc-bg/50 cursor-pointer transition-colors"
+                className="border-b border-border/50 hover:bg-background/50 cursor-pointer transition-colors"
                 onClick={() => setExpanded(expanded === ev.id ? null : ev.id)}
               >
-                <td className="px-4 py-2.5 text-xs text-soc-muted font-mono whitespace-nowrap">
+                <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono whitespace-nowrap">
                   {formatDateTime(ev.timestamp, settings)}
                 </td>
                 <td className="px-4 py-2.5">
@@ -86,18 +95,21 @@ export function EventTable({ events, loading }: EventTableProps) {
                     {ev.severity}
                   </span>
                 </td>
-                <td className="px-4 py-2.5 text-xs text-soc-text">{ev.category}</td>
-                <td className="px-4 py-2.5 text-xs text-soc-text font-mono">{ev.event_type}</td>
-                <td className="px-4 py-2.5 text-xs text-soc-accent">{ev.process_name || "—"}</td>
-                <td className="px-4 py-2.5 text-xs text-soc-text truncate max-w-[200px]">
+                <td className="px-4 py-2.5 text-xs text-foreground">{ev.category}</td>
+                <td className="px-4 py-2.5 text-xs text-foreground font-mono">{ev.event_type}</td>
+                <td className="px-4 py-2.5 text-xs text-primary">{ev.process_name || "—"}</td>
+                <td className="px-4 py-2.5 text-xs text-foreground truncate max-w-[200px]">
                   {getEventDetail(ev)}
                 </td>
-                <td className="px-4 py-2.5 text-xs text-soc-muted">{ev.source}</td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono whitespace-nowrap">
+                  {agentMap.get(ev.agent_id) ?? ev.agent_id}
+                </td>
+                <td className="px-4 py-2.5 text-xs text-muted-foreground">{ev.source}</td>
               </tr>
               {expanded === ev.id && (
                 <tr key={`${ev.id}-detail`}>
-                  <td colSpan={7} className="px-4 py-3 bg-soc-bg/80">
-                    <pre className="text-xs text-soc-muted font-mono whitespace-pre-wrap max-h-48 overflow-auto">
+                  <td colSpan={8} className="px-4 py-3 bg-background/80">
+                    <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap max-h-48 overflow-auto">
                       {JSON.stringify(ev, null, 2)}
                     </pre>
                   </td>
@@ -108,9 +120,9 @@ export function EventTable({ events, loading }: EventTableProps) {
         </tbody>
       </table>
       {events.length === 0 && (
-        <p className="text-soc-muted text-sm text-center py-8">No events found</p>
+        <p className="text-muted-foreground text-sm text-center py-8">No events found</p>
       )}
-    </div>
+    </Card>
   );
 }
 

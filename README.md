@@ -87,6 +87,8 @@ sudo python agents/macos/main.py \
 
 To stop the agent: press `Ctrl+C` in the terminal where it's running.
 
+Once the agent is registered, you can customize what it collects from the **Agents page** in the dashboard — each agent has its own collector settings panel where you can toggle individual event groups on or off (process execution, file access, network connections, SSH, sudo, volume mounts, etc.). Changes apply on the next heartbeat (~30s).
+
 ---
 
 ## Detection Rules
@@ -106,6 +108,18 @@ YAML files in `backend/rules/`. Two types:
 | Unusual Outbound Port | MEDIUM |
 | Known C2 Port | CRITICAL |
 | Brute Force Auth | CRITICAL |
+| External Volume Mount | INFO |
+| Non-Apple Kernel Extension | HIGH |
+| Remote Thread Injection | CRITICAL |
+| Task Port Inspection | HIGH |
+| Privilege Escalation to Root | CRITICAL |
+| Sudo Command Executed | MEDIUM |
+| Sudo Denied (repeated failures) | HIGH |
+| SSH Login | INFO |
+| SSH Login Failures | HIGH |
+| Screen Sharing Attached | MEDIUM |
+| Malware Detected (XProtect) | CRITICAL |
+| Sensitive File Deleted | HIGH |
 
 ---
 

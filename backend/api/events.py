@@ -54,7 +54,7 @@ async def get_event(event_id: str) -> dict:
     return event
 
 
-@router.delete("/events", dependencies=[Depends(require_api_key)])
+@router.delete("/events")
 async def clear_events() -> dict:
     count = await repository.clear_events()
     return {"cleared": count}

@@ -1,4 +1,6 @@
 import { Activity, Bell, Layout, RotateCcw, Clock, Columns2, Sliders } from "lucide-react";
+import { Card } from "../components/ui/card";
+import { Button } from "../components/ui/button";
 import { useSettings } from "../contexts/SettingsContext";
 
 const feedLimits = [50, 100, 200, 500];
@@ -10,14 +12,11 @@ export function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-soc-text">Settings</h2>
-        <button
-          onClick={reset}
-          className="flex items-center gap-1.5 text-xs text-soc-muted hover:text-soc-danger transition-colors"
-        >
+        <h2 className="text-lg font-semibold text-foreground">Settings</h2>
+        <Button variant="ghost" size="sm" onClick={reset} className="text-muted-foreground hover:text-destructive gap-1.5">
           <RotateCcw className="w-3.5 h-3.5" />
           Reset to defaults
-        </button>
+        </Button>
       </div>
 
       {/* Display */}
@@ -104,17 +103,17 @@ export function SettingsPage() {
       </Section>
 
       {/* About */}
-      <div className="bg-soc-card border border-soc-border rounded-lg p-4">
+      <Card className="p-4">
         <div className="flex items-center gap-3">
-          <Columns2 className="w-4 h-4 text-soc-muted" />
+          <Columns2 className="w-4 h-4 text-muted-foreground" />
           <div>
-            <p className="text-sm font-medium text-soc-text">HomeSOC v0.1.0</p>
-            <p className="text-xs text-soc-muted mt-0.5">
+            <p className="text-sm font-medium text-foreground">HomeSOC v0.1.0</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
               Home Security Operations Center — Local network security monitoring
             </p>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -123,13 +122,13 @@ export function SettingsPage() {
 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-soc-card border border-soc-border rounded-lg overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-soc-border">
-        <span className="text-soc-accent">{icon}</span>
-        <h3 className="text-sm font-medium text-soc-text">{title}</h3>
+    <Card className="overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+        <span className="text-primary">{icon}</span>
+        <h3 className="text-sm font-medium text-foreground">{title}</h3>
       </div>
-      <div className="divide-y divide-soc-border">{children}</div>
-    </div>
+      <div className="divide-y divide-border">{children}</div>
+    </Card>
   );
 }
 
@@ -145,8 +144,8 @@ function SettingRow({
   return (
     <div className="flex items-center justify-between px-4 py-3.5 gap-6">
       <div className="min-w-0">
-        <p className="text-sm text-soc-text">{label}</p>
-        <p className="text-xs text-soc-muted mt-0.5">{description}</p>
+        <p className="text-sm text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
       </div>
       <div className="flex-shrink-0">{children}</div>
     </div>

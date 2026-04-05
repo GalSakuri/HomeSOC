@@ -2,10 +2,20 @@ import type { AgentInfo, Alert, DashboardSummary, DetectionRule, SecurityEvent }
 
 const BASE_URL = "/api/v1";
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+function getAuthHeaders(): Record<string, string> {
+  const token = localStorage.getItem("homesoc_token");
+  return token ? { "Authorization": `Bearer ${token}` } : {};
+}
+
+async function request<T>(path: string, options?: RequestInit, signal?: AbortSignal): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    signal,
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+      ...(options?.headers as Record<string, string> | undefined),
+    },
   });
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText}`);
@@ -16,11 +26,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export const api = {
   getDashboardSummary: () => request<DashboardSummary>("/dashboard/summary"),
 
-  getEvents: (params?: Record<string, string | number>) => {
+  getEvents: (params?: Record<string, string | number>, signal?: AbortSignal) => {
     const query = params ? "?" + new URLSearchParams(
       Object.entries(params).map(([k, v]) => [k, String(v)])
     ).toString() : "";
-    return request<SecurityEvent[]>(`/events${query}`);
+    return request<SecurityEvent[]>(`/events${query}`, undefined, signal);
   },
 
   getEvent: (id: string) => request<SecurityEvent>(`/events/${id}`),
@@ -71,6 +81,12 @@ export const api = {
 
   resumeAgent: (id: string) =>
     request<{ status: string; agent_id: string }>(`/agents/${id}/resume`, { method: "POST" }),
+
+  updateAgentConfig: (id: string, config: Record<string, unknown>) =>
+    request<{ agent_id: string; config: Record<string, unknown> }>(`/agents/${id}/config`, {
+      method: "PATCH",
+      body: JSON.stringify(config),
+    }),
 
   clearEvents: () =>
     request<{ cleared: number }>("/events", { method: "DELETE" }),

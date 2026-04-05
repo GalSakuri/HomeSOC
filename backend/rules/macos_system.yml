@@ -1,0 +1,156 @@
+rules:
+  - id: "macos-external-volume-mount"
+    name: "External Volume Mounted"
+    description: "A USB drive, SD card, or external disk was connected"
+    alert_on: "A removable volume (USB, SD card, external disk, or CD/DVD) was mounted. Could indicate data exfiltration via physical media or introduction of malicious files."
+    severity: "medium"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "system"
+      event_type: "volume_mount"
+      match_any_prefix:
+        file_path: ["/Volumes/"]
+
+  - id: "macos-kext-non-apple"
+    name: "Third-Party Kernel Extension Loaded"
+    description: "A kernel extension not signed by Apple was loaded"
+    alert_on: "A non-Apple kernel extension (kext) was loaded. Kernel extensions run at the highest privilege level. Rootkits and some malware use kexts to persist and hide themselves."
+    severity: "high"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "system"
+      event_type: "kextload"
+      not_match_prefix:
+        file_path: ["com.apple."]
+
+  - id: "macos-remote-thread-inject"
+    name: "Remote Thread Created in Another Process"
+    description: "A process created a thread inside a different process"
+    alert_on: "A process injected a thread into another running process. This is the primary technique used for code injection, process hollowing, and DLL/dylib injection attacks."
+    severity: "critical"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "process"
+      event_type: "remote_thread_create"
+
+  - id: "macos-task-port-inspect"
+    name: "Process Task Port Obtained"
+    description: "A process obtained the task port of another process"
+    alert_on: "A process obtained full control over another process via its task port. This allows reading/writing the target process's memory and is used by debuggers, injection tools, and malware."
+    severity: "high"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "process"
+      event_type: "task_inspect"
+      not_match_prefix:
+        process_path:
+          - "/usr/bin/lldb"
+          - "/Applications/Xcode.app/"
+
+  - id: "macos-privilege-escalation-root"
+    name: "Privilege Escalation to Root"
+    description: "Process changed its UID/GID to 0 (root)"
+    alert_on: "A process escalated its privileges to root (UID 0) using setuid or setgid. Unless this is a known system process, this is a strong indicator of a privilege escalation exploit."
+    severity: "critical"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "process"
+      event_type: "privilege_escalation"
+      match:
+        auth_user: "0"
+
+  - id: "macos-sudo-command"
+    name: "Sudo Command Executed"
+    description: "A command was run via sudo"
+    alert_on: "A command was executed using sudo (root privileges). Legitimate admin tasks occasionally use sudo, but frequent or unexpected sudo usage can indicate an attacker operating on your machine."
+    severity: "medium"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "auth"
+      event_type: "sudo_command"
+      match:
+        auth_success: true
+
+  - id: "macos-sudo-denied"
+    name: "Sudo Access Denied"
+    description: "A sudo attempt was rejected"
+    alert_on: "A user attempted to run a command with sudo but was denied. Repeated denials may indicate an attacker attempting to escalate privileges with an incorrect password."
+    severity: "high"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "auth"
+      event_type: "sudo_command"
+      match:
+        auth_success: false
+
+  - id: "macos-ssh-login"
+    name: "Inbound SSH Login"
+    description: "Someone logged in to this machine via SSH"
+    alert_on: "A successful SSH login was made to this machine. If you are not expecting remote access, this is highly suspicious and may indicate your machine has been compromised remotely."
+    severity: "low"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "auth"
+      event_type: "ssh_login"
+      match:
+        auth_success: true
+
+  - id: "macos-ssh-failed"
+    name: "Failed SSH Login Attempts"
+    description: "Multiple failed SSH login attempts detected"
+    alert_on: "Multiple failed SSH login attempts within a short period. This is a classic brute-force pattern targeting remote access to your machine."
+    severity: "high"
+    platform: "macos"
+    type: "threshold"
+    conditions:
+      category: "auth"
+      event_type: "ssh_login"
+      match:
+        auth_success: false
+    window_seconds: 60
+    threshold: 3
+
+  - id: "macos-screensharing-attach"
+    name: "Screen Sharing Session Started"
+    description: "Remote screen sharing connected to this machine"
+    alert_on: "A remote screen sharing session was successfully established. If you did not initiate this connection, someone may have unauthorized remote access to your screen and desktop."
+    severity: "high"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "system"
+      event_type: "screensharing_attach"
+      match:
+        auth_success: true
+
+  - id: "macos-malware-detected"
+    name: "XProtect Malware Detection"
+    description: "Apple's XProtect identified malware on this machine"
+    alert_on: "Apple's built-in XProtect antivirus detected a known malware signature. Immediate action is required — do not open any unknown files and review recently downloaded software."
+    severity: "critical"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "system"
+      event_type: "malware_detected"
+
+  - id: "macos-file-delete-sensitive"
+    name: "Sensitive File Deleted"
+    description: "A file in a sensitive system location was deleted"
+    alert_on: "A file was deleted from a sensitive system directory (/etc, LaunchAgents, LaunchDaemons, /usr/local/bin). This may indicate malware removing its traces or an attacker modifying system configuration."
+    severity: "medium"
+    platform: "macos"
+    type: "single"
+    conditions:
+      category: "file"
+      event_type: "file_delete"
+      match_any_contains:
+        file_path: ["/etc/", "LaunchAgents", "LaunchDaemons", "/usr/local/bin/"]

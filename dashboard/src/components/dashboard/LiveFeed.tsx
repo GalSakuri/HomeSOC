@@ -2,11 +2,14 @@ import { useEffect, useRef } from "react";
 import { Activity } from "lucide-react";
 import { SecurityEvent } from "../../types/events";
 import { useSettings } from "../../contexts/SettingsContext";
-import { formatTime } from "../../utils/formatTime";
+import { formatDateTime } from "../../utils/formatTime";
 import { severityDot } from "../../utils/severity";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
+import { Badge } from "../ui/badge";
 
 interface LiveFeedProps {
   events: SecurityEvent[];
+  className?: string;
 }
 
 const categoryLabel: Record<string, string> = {
@@ -19,7 +22,7 @@ const categoryLabel: Record<string, string> = {
   system: "SYS",
 };
 
-export function LiveFeed({ events }: LiveFeedProps) {
+export function LiveFeed({ events, className }: LiveFeedProps) {
   const { settings } = useSettings();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -33,51 +36,55 @@ export function LiveFeed({ events }: LiveFeedProps) {
   }, [events, settings.autoScrollFeed]);
 
   return (
-    <div className="bg-soc-card border border-soc-border rounded-lg p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-soc-text flex items-center gap-2">
-          <Activity className="w-4 h-4 text-soc-success" />
-          Live Event Feed
-        </h3>
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-soc-success animate-pulse" />
-          <span className="text-xs text-soc-muted">{events.length} events</span>
+    <Card className={className}>
+      <CardHeader className="pb-3 px-4 pt-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-soc-success" />
+            Live Event Feed
+          </CardTitle>
+          <div className="flex items-center gap-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-soc-success animate-pulse" />
+            <span className="text-xs text-muted-foreground">{events.length} events</span>
+          </div>
         </div>
-      </div>
+      </CardHeader>
 
-      <div
-        ref={scrollRef}
-        className={`space-y-1 max-h-[450px] overflow-y-auto font-mono text-xs ${
-          settings.compactMode ? "space-y-0" : ""
-        }`}
-      >
-        {visibleEvents.length === 0 ? (
-          <p className="text-soc-muted text-center py-8 text-sm font-sans">
-            Waiting for events...
-          </p>
-        ) : (
-          visibleEvents.map((ev) => (
-            <div
-              key={ev.id}
-              className={`flex items-center gap-2 px-2 hover:bg-soc-bg/50 rounded transition-colors ${
-                settings.compactMode ? "py-0.5" : "py-1.5"
-              }`}
-            >
-              <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${severityDot[ev.severity]}`} />
-              <span className="text-soc-muted w-14 flex-shrink-0">
-                {formatTime(ev.timestamp, settings)}
-              </span>
-              <span className="text-soc-accent w-10 flex-shrink-0 text-[10px] font-bold">
-                {categoryLabel[ev.category] || ev.category.toUpperCase()}
-              </span>
-              <span className="text-soc-text truncate flex-1">
-                {formatEventSummary(ev)}
-              </span>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+      <CardContent className="px-4 pb-4">
+        <div
+          ref={scrollRef}
+          className={`space-y-1 overflow-y-auto font-mono text-xs ${
+            settings.compactMode ? "space-y-0" : ""
+          }`}
+        >
+          {visibleEvents.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8 text-sm font-sans">
+              Waiting for events...
+            </p>
+          ) : (
+            visibleEvents.map((ev) => (
+              <div
+                key={ev.id}
+                className={`flex items-center gap-2 px-2 hover:bg-background/50 rounded transition-colors ${
+                  settings.compactMode ? "py-0.5" : "py-1.5"
+                }`}
+              >
+                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${severityDot[ev.severity]}`} />
+                <span className="text-muted-foreground w-28 flex-shrink-0">
+                  {formatDateTime(ev.timestamp, settings)}
+                </span>
+                <Badge variant="outline" className="w-10 flex-shrink-0 justify-center text-[9px] font-bold px-1 py-0 h-4">
+                  {categoryLabel[ev.category] || ev.category.toUpperCase()}
+                </Badge>
+                <span className="text-foreground truncate flex-1">
+                  {formatEventSummary(ev)}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
