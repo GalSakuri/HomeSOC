@@ -27,7 +27,7 @@ export function Sidebar() {
           <Shield className="w-7 h-7 text-soc-accent" />
           <div>
             <h1 className="text-lg font-bold text-soc-text leading-tight">HomeSOC</h1>
-            <p className="text-[10px] text-soc-muted uppercase tracking-widest">Security Operations</p>
+            <p className="text-[11px] text-soc-muted">Security Operations</p>
           </div>
         </div>
       </div>
@@ -38,9 +38,9 @@ export function Sidebar() {
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+              `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
                 isActive
-                  ? "bg-soc-accent/10 text-soc-accent font-medium"
+                  ? "bg-soc-accent/10 text-soc-accent font-medium border-l-2 border-soc-accent pl-2.5"
                   : "text-soc-muted hover:text-soc-text hover:bg-soc-card"
               }`
             }

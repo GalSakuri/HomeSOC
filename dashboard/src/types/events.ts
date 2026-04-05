@@ -73,6 +73,7 @@ export interface DetectionRule {
   id: string;
   name: string;
   description: string;
+  alert_on: string;
   severity: Severity;
   platform: string | null;
   type: string;

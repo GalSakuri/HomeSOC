@@ -78,7 +78,7 @@ export function EventTimeline({ events }: EventTimelineProps) {
   const maxValue = Math.max(1, ...chartData.map((d) => d.events));
 
   return (
-    <div className="bg-soc-card border border-soc-border rounded-xl p-4">
+    <div className="bg-soc-card border border-soc-border rounded-lg p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-soc-text">
           Event Timeline (Last Hour)

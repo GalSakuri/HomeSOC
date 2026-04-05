@@ -33,9 +33,9 @@ export function LiveFeed({ events }: LiveFeedProps) {
   }, [events, settings.autoScrollFeed]);
 
   return (
-    <div className="bg-soc-card border border-soc-border rounded-xl p-4">
+    <div className="bg-soc-card border border-soc-border rounded-lg p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-soc-text flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-soc-text flex items-center gap-2">
           <Activity className="w-4 h-4 text-soc-success" />
           Live Event Feed
         </h3>

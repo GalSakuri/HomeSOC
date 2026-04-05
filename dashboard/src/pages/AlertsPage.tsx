@@ -16,14 +16,14 @@ export function AlertsPage() {
           <button
             onClick={handleClear}
             disabled={clearing}
-            className="flex items-center gap-1.5 text-xs text-soc-danger hover:text-soc-danger/80 px-3 py-1.5 rounded-lg border border-soc-danger/30 hover:bg-soc-danger/10 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs text-soc-danger hover:text-soc-danger/80 px-3 py-1.5 rounded-md border border-soc-danger/30 hover:bg-soc-danger/10 transition-colors disabled:opacity-50"
           >
             <Trash2 className="w-3 h-3" />
             {clearing ? "Clearing..." : "Clear All"}
           </button>
           <button
             onClick={refresh}
-            className="flex items-center gap-1.5 text-xs text-soc-accent hover:text-soc-accent/80 px-3 py-1.5 rounded-lg border border-soc-border hover:bg-soc-accent/10 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-soc-accent hover:text-soc-accent/80 px-3 py-1.5 rounded-md border border-soc-border hover:bg-soc-accent/10 transition-colors"
           >
             <RefreshCw className="w-3 h-3" />
             Refresh

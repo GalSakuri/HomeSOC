@@ -50,7 +50,7 @@ export function SettingsPage() {
               <button
                 key={fmt}
                 onClick={() => update("timeFormat", fmt)}
-                className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                className={`px-3 py-1.5 rounded-md border text-sm transition-colors ${
                   settings.timeFormat === fmt
                     ? "border-soc-accent bg-soc-accent/10 text-soc-accent"
                     : "border-soc-border text-soc-muted hover:text-soc-text"
@@ -104,7 +104,7 @@ export function SettingsPage() {
       </Section>
 
       {/* About */}
-      <div className="bg-soc-card border border-soc-border rounded-xl p-4">
+      <div className="bg-soc-card border border-soc-border rounded-lg p-4">
         <div className="flex items-center gap-3">
           <Columns2 className="w-4 h-4 text-soc-muted" />
           <div>
@@ -123,7 +123,7 @@ export function SettingsPage() {
 
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-soc-card border border-soc-border rounded-xl overflow-hidden">
+    <div className="bg-soc-card border border-soc-border rounded-lg overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-soc-border">
         <span className="text-soc-accent">{icon}</span>
         <h3 className="text-sm font-medium text-soc-text">{title}</h3>
@@ -165,7 +165,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       style={{ width: 40, height: 22 }}
     >
       <span
-        className="absolute top-0.5 left-0.5 w-[18px] h-[18px] rounded-full bg-white shadow transition-transform"
+        className="absolute top-0.5 left-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform"
         style={{ transform: checked ? "translateX(18px)" : "translateX(0)" }}
       />
     </button>
@@ -182,14 +182,14 @@ function SegmentedControl<T extends number>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex rounded-lg border border-soc-border overflow-hidden">
+    <div className="flex rounded-md border border-soc-border overflow-hidden bg-soc-surface/50">
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={`px-2.5 py-1 text-xs transition-colors ${
             selected === opt.value
-              ? "bg-soc-accent text-white"
+              ? "bg-soc-card text-soc-text shadow-sm"
               : "text-soc-muted hover:text-soc-text hover:bg-soc-surface"
           }`}
         >

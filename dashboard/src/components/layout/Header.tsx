@@ -49,7 +49,7 @@ export function Header({ status, onToggle }: HeaderProps) {
       <div className="flex items-center gap-3">
         <button
           onClick={onToggle}
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors ${cfg.border} ${cfg.hover}`}
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-soc-card transition-colors ${cfg.hover}`}
           title={
             status === "live" || status === "connecting"
               ? "Click to pause live feed"

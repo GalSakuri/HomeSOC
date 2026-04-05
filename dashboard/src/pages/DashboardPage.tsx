@@ -38,7 +38,7 @@ export function DashboardPage() {
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-md transition-colors"
+            className="px-3 py-1.5 text-sm bg-soc-accent hover:bg-soc-accent/90 disabled:opacity-50 text-white rounded-md transition-colors"
           >
             {generating ? "Generating..." : "Generate Test Events"}
           </button>

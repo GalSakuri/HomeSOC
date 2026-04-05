@@ -46,19 +46,17 @@ export function StatCards({ summary }: StatCardsProps) {
 
   return (
     <div className="grid grid-cols-4 gap-4">
-      {stats.map(({ label, value, icon: Icon, color, bg, to }) => (
+      {stats.map(({ label, value, icon: Icon, color, to }) => (
         <div
           key={label}
           onClick={() => navigate(to)}
-          className="bg-soc-card border border-soc-border rounded-xl p-4 cursor-pointer hover:border-soc-accent/40 hover:bg-soc-card/80 transition-all"
+          className="bg-soc-card border border-soc-border rounded-lg p-4 cursor-pointer hover:border-soc-accent/40 hover:bg-soc-card/80 transition-all"
         >
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs text-soc-muted uppercase tracking-wider">
+            <span className="text-xs font-medium text-soc-muted">
               {label}
             </span>
-            <div className={`${bg} p-1.5 rounded-lg`}>
-              <Icon className={`w-4 h-4 ${color}`} />
-            </div>
+            <Icon className={`w-5 h-5 ${color}`} />
           </div>
           <p className="text-2xl font-bold text-soc-text">{value}</p>
         </div>

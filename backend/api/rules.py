@@ -15,6 +15,7 @@ async def list_rules(request: Request) -> list[dict]:
             "id": r["id"],
             "name": r["name"],
             "description": r.get("description", ""),
+            "alert_on": r.get("alert_on", ""),
             "severity": r.get("severity", "medium"),
             "platform": r.get("platform"),
             "type": r.get("type", "single"),

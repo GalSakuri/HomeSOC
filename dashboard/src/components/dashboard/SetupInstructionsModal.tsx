@@ -67,7 +67,7 @@ export function SetupInstructionsModal({ agentId, platform, onClose }: SetupInst
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
       <div
-        className="bg-soc-card border border-soc-border rounded-xl p-6 w-full max-w-xl shadow-xl"
+        className="bg-soc-card border border-soc-border rounded-lg p-6 w-full max-w-xl shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">

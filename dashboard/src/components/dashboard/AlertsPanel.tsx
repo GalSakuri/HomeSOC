@@ -21,9 +21,9 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
   const { settings } = useSettings();
 
   return (
-    <div className="bg-soc-card border border-soc-border rounded-xl p-4">
+    <div className="bg-soc-card border border-soc-border rounded-lg p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-soc-text flex items-center gap-2">
+        <h3 className="text-sm font-semibold text-soc-text flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-soc-warning" />
           Active Alerts
         </h3>
@@ -46,7 +46,7 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span
-                      className={`text-[10px] font-medium uppercase px-1.5 py-0.5 rounded ${severityBadge[alert.severity]}`}
+                      className={`text-[10px] font-medium uppercase px-1.5 py-0.5 rounded-full ${severityBadge[alert.severity]}`}
                     >
                       {alert.severity}
                     </span>
@@ -66,7 +66,7 @@ export function AlertsPanel({ alerts, onAcknowledge }: AlertsPanelProps) {
                 {onAcknowledge && alert.status === "open" && (
                   <button
                     onClick={() => onAcknowledge(alert.id)}
-                    className="text-xs text-soc-accent hover:text-soc-accent/80 px-2 py-1 rounded border border-soc-border hover:bg-soc-accent/10 transition-colors"
+                    className="text-xs text-soc-accent hover:text-soc-accent/80 px-2 py-1 rounded-md border border-soc-border hover:bg-soc-accent/10 transition-colors"
                   >
                     ACK
                   </button>

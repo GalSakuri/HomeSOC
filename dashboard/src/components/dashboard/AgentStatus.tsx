@@ -60,7 +60,7 @@ function AddAgentModal({ onClose, onAdded }: { onClose: () => void; onAdded: () 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
       <div
-        className="bg-soc-card border border-soc-border rounded-xl p-6 w-full max-w-md shadow-xl"
+        className="bg-soc-card border border-soc-border rounded-lg p-6 w-full max-w-md shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-base font-semibold text-soc-text mb-4">Add Agent</h3>
@@ -72,7 +72,7 @@ function AddAgentModal({ onClose, onAdded }: { onClose: () => void; onAdded: () 
               value={hostname}
               onChange={(e) => setHostname(e.target.value)}
               placeholder="e.g. gals-macbook"
-              className="w-full px-3 py-2 rounded-lg bg-soc-bg border border-soc-border text-soc-text text-sm focus:outline-none focus:border-soc-accent"
+              className="w-full px-3 py-2 rounded-md bg-soc-bg border border-soc-border text-soc-text text-sm focus:outline-none focus:border-soc-accent focus:ring-1 focus:ring-soc-accent/30"
               autoFocus
             />
           </div>
@@ -81,7 +81,7 @@ function AddAgentModal({ onClose, onAdded }: { onClose: () => void; onAdded: () 
             <select
               value={platform}
               onChange={() => setPlatform("macos")}
-              className="w-full px-3 py-2 rounded-lg bg-soc-bg border border-soc-border text-soc-text text-sm focus:outline-none focus:border-soc-accent"
+              className="w-full px-3 py-2 rounded-md bg-soc-bg border border-soc-border text-soc-text text-sm focus:outline-none focus:border-soc-accent focus:ring-1 focus:ring-soc-accent/30"
             >
               <option value="macos">macOS</option>
             </select>
@@ -93,7 +93,7 @@ function AddAgentModal({ onClose, onAdded }: { onClose: () => void; onAdded: () 
               value={ipAddress}
               onChange={(e) => setIpAddress(e.target.value)}
               placeholder="e.g. 192.168.1.10"
-              className="w-full px-3 py-2 rounded-lg bg-soc-bg border border-soc-border text-soc-text text-sm focus:outline-none focus:border-soc-accent"
+              className="w-full px-3 py-2 rounded-md bg-soc-bg border border-soc-border text-soc-text text-sm focus:outline-none focus:border-soc-accent focus:ring-1 focus:ring-soc-accent/30"
             />
             <p className="text-xs text-soc-muted mt-1">Optional — used for display only, does not affect agent connectivity.</p>
           </div>
@@ -104,7 +104,7 @@ function AddAgentModal({ onClose, onAdded }: { onClose: () => void; onAdded: () 
               value={agentId}
               onChange={(e) => setAgentId(e.target.value)}
               placeholder="Auto-generated from hostname"
-              className="w-full px-3 py-2 rounded-lg bg-soc-bg border border-soc-border text-soc-text text-sm focus:outline-none focus:border-soc-accent"
+              className="w-full px-3 py-2 rounded-md bg-soc-bg border border-soc-border text-soc-text text-sm focus:outline-none focus:border-soc-accent focus:ring-1 focus:ring-soc-accent/30"
             />
             <p className="text-xs text-soc-muted mt-1">Leave blank to auto-generate</p>
           </div>
@@ -115,14 +115,14 @@ function AddAgentModal({ onClose, onAdded }: { onClose: () => void; onAdded: () 
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm text-soc-muted hover:text-soc-text rounded-lg border border-soc-border hover:bg-soc-bg transition-colors"
+              className="px-4 py-2 text-sm text-soc-muted hover:text-soc-text rounded-md border border-soc-border hover:bg-soc-bg transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 text-sm bg-soc-accent hover:bg-soc-accent/80 disabled:opacity-50 text-white rounded-lg transition-colors"
+              className="px-4 py-2 text-sm bg-soc-accent hover:bg-soc-accent/80 disabled:opacity-50 text-white rounded-md transition-colors"
             >
               {submitting ? "Adding..." : "Add Agent"}
             </button>
@@ -196,7 +196,7 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
   };
 
   return (
-    <div className="bg-soc-card border border-soc-border rounded-xl p-4">
+    <div className="bg-soc-card border border-soc-border rounded-lg p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-soc-text flex items-center gap-2">
           <Monitor className="w-4 h-4 text-soc-accent" />
@@ -205,7 +205,7 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
         {showRemove && (
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-soc-accent hover:bg-soc-accent/80 text-white rounded-lg transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-soc-accent hover:bg-soc-accent/80 text-white rounded-md transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Agent
@@ -243,7 +243,7 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
                 className="flex items-center justify-between p-3 bg-soc-bg/50 rounded-lg border border-soc-border"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">💻</span>
+                  <Monitor className="w-4 h-4 text-soc-muted" />
                   <div>
                     <p className="text-sm text-soc-text font-medium">
                       {agent.hostname}
@@ -263,7 +263,7 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
                   {isOffline && showRemove && (
                     <button
                       onClick={() => setSetupAgent({ id: agent.id, platform: agent.platform })}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-xs text-soc-accent hover:bg-soc-accent/10 border border-soc-accent/30 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-soc-accent hover:bg-soc-accent/10 border border-soc-accent/30 transition-colors"
                       title="Show setup instructions"
                     >
                       <Terminal className="w-3 h-3" />
@@ -275,7 +275,7 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
                   {isOnline && (
                     <button
                       onClick={() => handleStop(agent.id, agent.hostname)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-xs text-soc-danger hover:bg-soc-danger/10 border border-soc-danger/30 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-soc-danger hover:bg-soc-danger/10 border border-soc-danger/30 transition-colors"
                       title="Stop agent — signals the agent to shut down on its next heartbeat (up to 30s). To stop immediately, press Ctrl+C in the terminal where the agent is running."
                     >
                       <Square className="w-3 h-3" />
@@ -287,7 +287,7 @@ export function AgentStatus({ showRemove = false }: AgentStatusProps) {
                   {isStopped && (
                     <button
                       onClick={() => handleResume(agent.id)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-xs text-soc-success hover:bg-soc-success/10 border border-soc-success/30 transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-xs text-soc-success hover:bg-soc-success/10 border border-soc-success/30 transition-colors"
                       title="Resume agent — start collecting logs again"
                     >
                       <Play className="w-3 h-3" />

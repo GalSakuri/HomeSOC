@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import { Shield, ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { Shield, ChevronDown, ChevronRight, FileText, Bell } from "lucide-react";
 import { DetectionRule } from "../types/events";
 import { severityBadge } from "../utils/severity";
 
@@ -63,7 +63,7 @@ export function RulesPage() {
             return (
               <div
                 key={rule.id}
-                className="bg-soc-card border border-soc-border rounded-xl overflow-hidden"
+                className="bg-soc-card border border-soc-border rounded-lg overflow-hidden"
               >
                 <div
                   className="flex items-center gap-3 p-4 cursor-pointer hover:bg-soc-bg/30 transition-colors"
@@ -88,17 +88,17 @@ export function RulesPage() {
 
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {rule.platform && (
-                      <span className="text-[10px] text-soc-muted bg-soc-bg/50 px-1.5 py-0.5 rounded font-mono">
+                      <span className="text-[10px] text-soc-muted bg-soc-bg/50 px-1.5 py-0.5 rounded-full font-mono">
                         {rule.platform}
                       </span>
                     )}
                     <span
-                      className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${typeBadge[rule.type] || typeBadge.single}`}
+                      className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full ${typeBadge[rule.type] || typeBadge.single}`}
                     >
                       {rule.type}
                     </span>
                     <span
-                      className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${severityBadge[rule.severity] || severityBadge.medium}`}
+                      className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full ${severityBadge[rule.severity] || severityBadge.medium}`}
                     >
                       {rule.severity}
                     </span>
@@ -107,6 +107,15 @@ export function RulesPage() {
 
                 {isExpanded && (
                   <div className="border-t border-soc-border p-4 bg-soc-bg/40 space-y-3">
+                    {rule.alert_on && (
+                      <div className="flex gap-2.5 p-3 rounded-md bg-soc-accent/5 border border-soc-accent/20">
+                        <Bell className="w-3.5 h-3.5 text-soc-accent flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-[10px] font-semibold text-soc-accent uppercase tracking-wide mb-0.5">Alerts when</p>
+                          <p className="text-xs text-soc-text/90 leading-relaxed">{rule.alert_on}</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="grid grid-cols-3 gap-4 text-xs">
                       <div>
                         <span className="text-soc-muted block mb-1">Rule ID</span>

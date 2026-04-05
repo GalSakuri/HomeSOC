@@ -55,7 +55,7 @@ export function CategoryBreakdown({ summary }: CategoryBreakdownProps) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="bg-soc-card border border-soc-border rounded-xl p-4">
+    <div className="bg-soc-card border border-soc-border rounded-lg p-4">
       <h3 className="text-sm font-medium text-soc-text mb-4">
         Events by Category (24h)
       </h3>

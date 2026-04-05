@@ -468,7 +468,7 @@ function FAQItem({ faq }: { faq: FAQ }) {
 
 function SectionCard({ section, expanded, onToggle }: { section: GuideSection; expanded: boolean; onToggle: () => void }) {
   return (
-    <div id={section.id} className="bg-soc-card border border-soc-border rounded-xl overflow-hidden">
+    <div id={section.id} className="bg-soc-card border border-soc-border rounded-lg overflow-hidden">
       {/* Header — always visible */}
       <button
         onClick={onToggle}
@@ -561,7 +561,7 @@ export function GuidePage() {
       </div>
 
       {/* Quick nav */}
-      <div className="bg-soc-card border border-soc-border rounded-xl p-4">
+      <div className="bg-soc-card border border-soc-border rounded-lg p-4">
         <h3 className="text-xs font-semibold text-soc-muted uppercase tracking-wider mb-3">
           Jump to section
         </h3>

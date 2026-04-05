@@ -36,19 +36,19 @@ export function EventTable({ events, loading }: EventTableProps) {
 
   if (loading) {
     return (
-      <div className="bg-soc-card border border-soc-border rounded-xl p-8 text-center">
+      <div className="bg-soc-card border border-soc-border rounded-lg p-8 text-center">
         <p className="text-soc-muted">Loading events...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-soc-card border border-soc-border rounded-xl overflow-hidden">
+    <div className="bg-soc-card border border-soc-border rounded-lg overflow-hidden">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-soc-border text-left">
             <th
-              className="px-4 py-3 text-xs text-soc-muted font-medium uppercase cursor-pointer select-none hover:text-soc-text transition-colors"
+              className="px-4 py-3 text-xs text-soc-muted font-medium cursor-pointer select-none hover:text-soc-text transition-colors"
               onClick={toggleSort}
             >
               <span className="flex items-center gap-1.5">
@@ -62,12 +62,12 @@ export function EventTable({ events, loading }: EventTableProps) {
                 )}
               </span>
             </th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium uppercase">Severity</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium uppercase">Category</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium uppercase">Type</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium uppercase">Process</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium uppercase">Details</th>
-            <th className="px-4 py-3 text-xs text-soc-muted font-medium uppercase">Source</th>
+            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Severity</th>
+            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Category</th>
+            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Type</th>
+            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Process</th>
+            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Details</th>
+            <th className="px-4 py-3 text-xs text-soc-muted font-medium">Source</th>
           </tr>
         </thead>
         <tbody>
@@ -82,7 +82,7 @@ export function EventTable({ events, loading }: EventTableProps) {
                   {formatDateTime(ev.timestamp, settings)}
                 </td>
                 <td className="px-4 py-2.5">
-                  <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${severityBadge[ev.severity]}`}>
+                  <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-full ${severityBadge[ev.severity]}`}>
                     {ev.severity}
                   </span>
                 </td>
