@@ -45,3 +45,6 @@ logs/
 
 # Course notes (local only)
 docs/EX3-notes.md
+
+# Design system source files (local only)
+stitch_homesoc_security_dashboard/

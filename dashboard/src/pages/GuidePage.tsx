@@ -15,13 +15,8 @@ import {
   Terminal,
   HelpCircle,
   Workflow,
-  Network,
-  Eye,
   FileText,
-  Bell,
-  Zap,
   Lock,
-  RefreshCw,
 } from "lucide-react";
 
 /* ────────────────────────────── Guide Data ────────────────────────────── */

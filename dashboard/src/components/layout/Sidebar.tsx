@@ -21,39 +21,29 @@ const navItems = [
 
 export function Sidebar() {
   return (
-    <aside className="fixed left-0 top-0 h-screen w-56 bg-soc-surface border-r border-soc-border flex flex-col z-10">
-      <div className="px-4 py-5 border-b border-soc-border">
-        <div className="flex items-center gap-2">
-          <Shield className="w-7 h-7 text-soc-accent" />
-          <div>
-            <h1 className="text-lg font-bold text-soc-text leading-tight">HomeSOC</h1>
-            <p className="text-[11px] text-soc-muted">Security Operations</p>
-          </div>
-        </div>
+    <aside className="fixed left-0 top-0 h-screen w-14 bg-soc-surface border-r border-soc-border flex flex-col z-10 items-center">
+      <div className="h-12 border-b border-soc-border w-full flex items-center justify-center">
+        <Shield className="w-6 h-6 text-soc-accent" />
       </div>
 
-      <nav className="flex-1 py-3 px-2 space-y-0.5">
+      <nav className="flex-1 py-3 flex flex-col items-center gap-0.5 w-full px-2">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
+            title={label}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+              `flex items-center justify-center w-10 h-10 rounded-md transition-colors ${
                 isActive
-                  ? "bg-soc-accent/10 text-soc-accent font-medium border-l-2 border-soc-accent pl-2.5"
+                  ? "bg-soc-accent/10 text-soc-accent border-l-2 border-soc-accent"
                   : "text-soc-muted hover:text-soc-text hover:bg-soc-card"
               }`
             }
           >
             <Icon className="w-4 h-4" />
-            {label}
           </NavLink>
         ))}
       </nav>
-
-      <div className="p-4 border-t border-soc-border">
-        <p className="text-[10px] text-soc-muted">HomeSOC v0.1.0</p>
-      </div>
     </aside>
   );
 }

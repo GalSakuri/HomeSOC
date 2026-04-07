@@ -73,6 +73,21 @@ export const api = {
 
   getRules: () => request<DetectionRule[]>("/rules"),
 
+  getRuleSource: (id: string) =>
+    request<{ yaml: string }>(`/rules/${encodeURIComponent(id)}/source`),
+
+  saveRule: (id: string, yaml_content: string) =>
+    request<{ status: string; rule_id: string }>(`/rules/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify({ yaml_content }),
+    }),
+
+  testRule: (id: string) =>
+    request<{ status: string; event_id: string; alerts_triggered: number; rule_id: string }>(
+      `/rules/${encodeURIComponent(id)}/test`,
+      { method: "POST" },
+    ),
+
   deleteAgent: (id: string) =>
     request<{ deleted: string }>(`/agents/${id}`, { method: "DELETE" }),
 

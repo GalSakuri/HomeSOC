@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { Header } from "./Header";
 import type { ConnectionStatus } from "../../hooks/useWebSocket";
@@ -9,15 +9,21 @@ interface LayoutProps {
   onToggle: () => void;
 }
 
+// Pages that manage their own full-height layout (no padding)
+const FULL_HEIGHT_ROUTES = ["/rules"];
+
 export function Layout({ status, onToggle }: LayoutProps) {
   const { settings } = useSettings();
+  const { pathname } = useLocation();
+
+  const isFullHeight = FULL_HEIGHT_ROUTES.includes(pathname);
 
   return (
     <div className="min-h-screen bg-soc-bg">
       <Sidebar />
-      <div className="ml-56">
+      <div className="ml-14">
         <Header status={status} onToggle={onToggle} />
-        <main className={settings.compactMode ? "p-3" : "p-6"}>
+        <main className={isFullHeight ? "" : settings.compactMode ? "p-3" : "p-6"}>
           <Outlet />
         </main>
       </div>
