@@ -15,6 +15,25 @@
 
 An agent runs on your Mac and collects security events — process executions, file changes, network connections, auth attempts. Events stream to a local backend that runs detection rules and fires alerts. A live dashboard shows everything in real time.
 
+## Showcase
+
+### Dashboard — Security Overview
+![Dashboard Overview](docs/screenshots/dashboard%201.png)
+
+### Dashboard — Live Event Feed
+![Live Event Feed](docs/screenshots/dashboard%202.jpg)
+
+### Detection Rules
+![Detection Rules](docs/screenshots/rules.png)
+
+### Agents
+![Agents](docs/screenshots/agents.png)
+
+### Guide & FAQ
+![Guide and FAQ](docs/screenshots/FAQ.png)
+
+---
+
 ## Architecture
 
 ```mermaid
