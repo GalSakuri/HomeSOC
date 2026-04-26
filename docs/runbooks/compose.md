@@ -93,10 +93,14 @@ PYTHONPATH=. python -m pytest tests/ -v
 
 ### Schemathesis (API fuzz testing)
 
+Requires the backend to be running first (`docker compose up -d backend` or the full stack).
+
 ```bash
 pip install schemathesis
-schemathesis run http://localhost:8443/openapi.json
+schemathesis run http://localhost:8443/openapi.json --checks not_a_server_error
 ```
+
+This is the same check used in CI — it catches any 5xx responses from valid-schema requests.
 
 ## Stopping Services
 

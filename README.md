@@ -76,8 +76,6 @@ HOMESOC_API_KEY=your-secret-key-here
 # Python env (from project root)
 uv venv && source .venv/bin/activate
 uv pip install -r backend/requirements.txt
-# or with pip directly (bcrypt, jose, and multipart are required)
-pip3 install bcrypt "python-jose[cryptography]" python-multipart
 
 # Terminal 1 — backend
 python -m uvicorn backend.main:app --host 0.0.0.0 --port 8443 --reload
